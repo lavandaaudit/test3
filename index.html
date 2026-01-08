@@ -185,7 +185,7 @@
             <div class="indicator">AE Index (Auroral Electrojet): <span id="ae">—</span></div>
             <div class="indicator">Geomagnetic Storm Level (G1–G5): <span id="storm">—</span></div>
 
-            <!-- Нові індикатори для X-клас спалахів та сонячної активності -->
+            <!-- Блок solar.flare.activity — повністю збережений -->
             <h2 style="margin-top:30px; font-size:18px;">solar.flare.activity</h2>
             <div class="indicator">Latest GOES X-Ray Flux Class: <span id="flare_class">—</span></div>
             <div class="indicator">Recent X-class Flares (last 7 days): <span id="x_flares_count">—</span></div>
@@ -281,7 +281,7 @@ const breathChart = new Chart(ctx, {
 
 async function updateData() {
   try {
-    // Оригінальні дані сонячного вітру
+    // Оригінальні дані сонячного вітру (верхній блок — без змін)
     const plasma = await fetch("https://services.swpc.noaa.gov/products/solar-wind/plasma-1-day.json").then(r => r.json());
     const mag = await fetch("https://services.swpc.noaa.gov/products/solar-wind/mag-1-day.json").then(r => r.json());
     const kp = await fetch("https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json").then(r => r.json());
@@ -327,26 +327,26 @@ async function updateData() {
       kpVal >= 6 ? "G2" :
       kpVal >= 5 ? "G1" : "Quiet";
 
-    // Нові дані: X-клас спалахи, F10.7, Sunspot Number
-    // 1. GOES X-ray flux (для поточного класу спалаху)
-    const goes = await fetch("https://services.swpc.noaa.gov/products/goes-xray-flux-primary.json").then(r => r.json());
-    const latestFlux = goes[goes.length - 1];
-    const fluxClass = classifyFlare(latestFlux[1]); // long channel 0.1-0.8 nm
-    document.getElementById("flare_class").textContent = fluxClass || '—';
+    // ВИПРАВЛЕНИЙ БЛОК: дані про спалахи (solar.flare.activity)
+    // 1. Latest GOES X-Ray Flux Class (новий правильний endpoint)
+    const xray = await fetch("https://services.swpc.noaa.gov/json/goes/primary/xrays-6-hour.json").then(r => r.json());
+    const latestXray = xray[xray.length - 1];
+    const flux = latestXray.flux; // вже в W/m² (наприклад 8.5e-8 для B8.5)
+    const flareClass = classifyFlare(flux);
+    document.getElementById("flare_class").textContent = flareClass || '—';
 
-    // 2. F10.7 cm radio flux (NOAA solar-cycle indices)
+    // 2. F10.7 та Sunspot Number
     const indices = await fetch("https://services.swpc.noaa.gov/json/solar-cycle/observed-solar-cycle-indices.json").then(r => r.json());
     const latestIndices = indices[indices.length - 1];
-    document.getElementById("f107").textContent = latestIndices.f107 || '—';
-
-    // 3. Sunspot Number (останній з observed)
+    document.getElementById("f107").textContent = latestIndices.f10_7 || latestIndices["f10.7"] || '—';
     document.getElementById("sunspot").textContent = latestIndices.ssn || '—';
 
-    // 4. Кількість X-клас спалахів за останні 7 днів + найсильніший (NASA DONKI API, без ключа — працює для базових запитів)
-    const endDate = new Date().toISOString().split('T')[0];
-    const startDate = new Date(Date.now() - 7*24*60*60*1000).toISOString().split('T')[0];
-    const flares = await fetch(`https://kauai.ccmc.gsfc.nasa.gov/DONKI/WS/get/FLR?startDate=${startDate}&endDate=${endDate}`).then(r => r.json());
-    const xFlares = flares.filter(f => f.classType && f.classType.startsWith('X'));
+    // 3. X-class flares за останні 7 днів (DONKI без параметрів працює)
+    const flares = await fetch("https://kauai.ccmc.gsfc.nasa.gov/DONKI/WS/get/FLR").then(r => r.json());
+    const now = Date.now();
+    const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
+    const recentFlares = flares.filter(f => new Date(f.peakTime) > sevenDaysAgo);
+    const xFlares = recentFlares.filter(f => f.classType && f.classType.startsWith('X'));
     document.getElementById("x_flares_count").textContent = xFlares.length;
 
     if (xFlares.length > 0) {
@@ -366,13 +366,14 @@ async function updateData() {
   }
 }
 
-// Функція класифікації спалаху за flux (GOES)
+// Функція класифікації спалаху (працює з числом у W/m²)
 function classifyFlare(flux) {
-  if (flux >= 0.0001) return 'X' + (flux / 0.0001).toFixed(1);
-  if (flux >= 0.00001) return 'M' + (flux / 0.00001).toFixed(1);
-  if (flux >= 0.000001) return 'C' + (flux / 0.000001).toFixed(1);
-  if (flux >= 0.0000001) return 'B' + (flux / 0.0000001).toFixed(1);
-  return 'A' + (flux / 0.00000001).toFixed(1);
+  if (typeof flux !== 'number' || flux <= 0) return '—';
+  if (flux >= 1e-4) return 'X' + (flux / 1e-4).toFixed(1);
+  if (flux >= 1e-5) return 'M' + (flux / 1e-5).toFixed(1);
+  if (flux >= 1e-6) return 'C' + (flux / 1e-6).toFixed(1);
+  if (flux >= 1e-7) return 'B' + (flux / 1e-7).toFixed(1);
+  return 'A' + (flux / 1e-8).toFixed(1);
 }
 
 updateData();
