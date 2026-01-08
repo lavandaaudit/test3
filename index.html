@@ -2,382 +2,166 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <title>ibonarium.stability.human.lab.live</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    <!-- CSP для безпечного iframe на GitHub Pages -->
-    <meta http-equiv="Content-Security-Policy" content="frame-src https://realtime.obs-nancay.fr https://obs-nancay.fr;">
+    <title>Ibonarium Sun Translator</title>
     <style>
-        * {
+        body {
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
-        }
-        html, body {
-            width: 100%;
-            height: 100%;
-            background: #000;
-            color: #cfefff;
-            font-family: Inter, system-ui, monospace;
-            overflow: auto; /* Дозволяємо скрол на всіх пристроях */
-        }
-        .wrapper {
-            width: 100%;
-            min-height: 100vh; /* Замість фіксованої висоти */
-            display: flex;
-            justify-content: center;
-            align-items: flex-start; /* Не центруємо вертикально, щоб був скрол */
-            padding: 10px 0;
-        }
-        .panel {
-            width: 96%;
-            max-width: 1400px;
-            display: flex;
-            flex-direction: row;
-            gap: 24px;
-        }
-        /* LEFT */
-        .left {
-            width: 40%;
-            border: 1px solid #0ff3;
-            padding: 20px;
-            overflow-y: auto;
-            min-height: 600px; /* Мінімальна висота для десктопу */
-        }
-        .left h2 {
-            font-size: 22px;
-            margin-bottom: 16px;
-            text-align: center;
-            color: #7fffd4;
-        }
-        .indicator {
-            margin-bottom: 14px;
-            font-size: 16px;
-            line-height: 1.5;
-        }
-        .indicator span {
-            color: #9affff;
-        }
-        /* RIGHT */
-        .right {
-            width: 60%;
-            border: 1px solid #0ff3;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-        .chart-container {
-            flex: 1;
-            min-height: 300px; /* Забезпечуємо місце для графіка */
-        }
-        canvas {
-            width: 100% !important;
-            height: 100% !important;
-        }
-        .spectrogram-container {
-            flex: 1;
-            min-height: 400px; /* Більше місця для спектрограми на мобільних */
+            background-color: #000;
+            color: #e0e0e0;
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+            overflow: hidden;
             position: relative;
         }
-        iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-            filter: contrast(115%) brightness(110%);
-            background: #000;
+
+        /* Анімація зірок — повільний рух на глядача (parallax 3 шари) */
+        .stars {
             position: absolute;
             top: 0;
             left: 0;
+            width: 100%;
+            height: 100%;
+            background: transparent;
         }
 
-        /* Адаптація для планшетів та мобільних */
-        @media (max-width: 1024px) {
-            .panel {
-                flex-direction: column;
-            }
-            .left, .right {
-                width: 100%;
-            }
-            .left {
-                min-height: auto;
-            }
-            .right {
-                min-height: auto;
-            }
-            .chart-container {
-                min-height: 350px;
-            }
-            .spectrogram-container {
-                min-height: 450px;
-            }
+        #stars1 {
+            background: transparent url('https://i.imgur.com/Kp3b3qL.png') repeat;
+            animation: moveStars 200s linear infinite;
+        }
+        #stars2 {
+            background: transparent url('https://i.imgur.com/8zM4B8T.png') repeat;
+            animation: moveStars 300s linear infinite;
+        }
+        #stars3 {
+            background: transparent url('https://i.imgur.com/1q3z2fG.png') repeat;
+            animation: moveStars 400s linear infinite;
         }
 
-        @media (max-width: 768px) {
-            .wrapper {
-                padding: 8px;
-            }
-            .panel {
-                gap: 16px;
-            }
-            .left {
-                padding: 16px;
-            }
-            .left h2 {
-                font-size: 20px;
-            }
-            .indicator {
-                font-size: 15px;
-            }
-            .right {
-                padding: 16px;
-            }
-            iframe {
-                transform: scale(0.92);
-                transform-origin: top left;
-            }
+        @keyframes moveStars {
+            from { background-position: 0 0; }
+            to { background-position: 10000px 10000px; }
         }
 
-        @media (max-width: 480px) {
-            .left h2 {
-                font-size: 18px;
-            }
-            .indicator {
-                font-size: 14px;
-            }
-            .left {
-                padding: 12px;
-            }
-            .right {
-                padding: 12px;
-            }
-            .chart-container {
-                min-height: 300px;
-            }
-            .spectrogram-container {
-                min-height: 400px;
-            }
-            iframe {
-                transform: scale(0.88);
-                transform-origin: top left;
-            }
+        .container {
+            position: relative;
+            z-index: 10;
+            max-width: 1400px;
+            margin: 40px auto;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #ffcc00;
+            font-size: 2.5em;
+            margin-bottom: 40px;
+            text-shadow: 0 0 10px #ffcc00;
+        }
+
+        .row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 60px;
+        }
+
+        .gif-container {
+            flex: 1 1 600px;
+            max-width: 700px;
+        }
+
+        .gif-container img {
+            width: 100%;
+            border: 3px solid #444;
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(255, 204, 0, 0.6);
+        }
+
+        /* Червоний відтінок для C2 (верхній ряд) */
+        .red-gif img {
+            filter: hue-rotate(0deg) saturate(1.5) brightness(1.2);
+        }
+
+        /* Синій відтінок для C3 (нижній ряд) */
+        .blue-gif img {
+            filter: hue-rotate(200deg) saturate(1.5) brightness(1.2);
+        }
+
+        .photos {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .photos img {
+            width: 200px;
+            height: 200px;
+            object-fit: cover;
+            border: 3px solid #ffcc00;
+            border-radius: 12px;
+            box-shadow: 0 0 15px rgba(255, 204, 0, 0.8);
+        }
+
+        .refresh {
+            font-size: 1.2em;
+            color: #ffcc00;
+            margin: 40px 0;
+        }
+
+        .note {
+            font-size: 0.9em;
+            color: #aaa;
         }
     </style>
 </head>
 <body>
-<div class="wrapper">
-    <div class="panel">
-        <!-- LEFT COLUMN -->
-        <div class="left">
-            <h2>solar.stability.lab.live</h2>
-            <div class="indicator">Solar Wind Speed (km/s): <span id="sw_speed">—</span></div>
-            <div class="indicator">Solar Wind Density (/cc): <span id="sw_density">—</span></div>
-            <div class="indicator">Solar Wind Temperature (K): <span id="sw_temp">—</span></div>
-            <div class="indicator">IMF Bt – Total Magnetic Field (nT): <span id="imf_bt">—</span></div>
-            <div class="indicator">IMF Bz (nT): <span id="imf_bz">—</span></div>
-            <div class="indicator">IMF By (nT): <span id="imf_by">—</span></div>
-            <div class="indicator">Solar Wind Dynamic Pressure (nPa): <span id="pressure">—</span></div>
-            <div class="indicator">Proton Flux &gt;10 MeV: <span id="proton_flux">—</span></div>
-            <div class="indicator">Electron Flux &gt;2 MeV: <span id="electron_flux">—</span></div>
-            <div class="indicator">Kp Index: <span id="kp">—</span></div>
-            <div class="indicator">Dst Index (nT): <span id="dst">—</span></div>
-            <div class="indicator">AE Index (Auroral Electrojet): <span id="ae">—</span></div>
-            <div class="indicator">Geomagnetic Storm Level (G1–G5): <span id="storm">—</span></div>
 
-            <!-- Блок solar.flare.activity — повністю збережений -->
-            <h2 style="margin-top:30px; font-size:18px;">solar.flare.activity</h2>
-            <div class="indicator">Latest GOES X-Ray Flux Class: <span id="flare_class">—</span></div>
-            <div class="indicator">Recent X-class Flares (last 7 days): <span id="x_flares_count">—</span></div>
-            <div class="indicator">Strongest Recent Flare: <span id="strongest_flare">—</span></div>
-            <div class="indicator">F10.7 cm Radio Flux (sfu): <span id="f107">—</span></div>
-            <div class="indicator">Sunspot Number (SIDC): <span id="sunspot">—</span></div>
+    <!-- Фон з анімованими зірками -->
+    <div class="stars" id="stars1"></div>
+    <div class="stars" id="stars2"></div>
+    <div class="stars" id="stars3"></div>
+
+    <div class="container">
+        <h1>Ibonarium Sun Translator</h1>
+        <p>Реал-тайм спостереження Сонця: SOHO/LASCO (корона) + SDO/AIA (поверхня та атмосфера)</p>
+
+        <!-- Перший ряд: SOHO C2 (червоний) + 3 фото SDO -->
+        <div class="row">
+            <div class="gif-container red-gif">
+                <p><strong>LASCO C2 — анімація ~48 годин (внутрішня корона, червоний відтінок)</strong></p>
+                <img src="https://soho.nascom.nasa.gov/data/LATEST/current_c2.gif" alt="LASCO C2 animation" loading="lazy">
+            </div>
+            <div class="photos">
+                <img src="https://sdo.gsfc.nasa.gov/assets/img/latest/latest_1024_0171.jpg" alt="AIA 171 Å" loading="lazy">
+                <img src="https://sdo.gsfc.nasa.gov/assets/img/latest/latest_1024_0193.jpg" alt="AIA 193 Å" loading="lazy">
+                <img src="https://sdo.gsfc.nasa.gov/assets/img/latest/latest_1024_0304.jpg" alt="AIA 304 Å" loading="lazy">
+            </div>
         </div>
-        <!-- RIGHT COLUMN -->
-        <div class="right">
-            <!-- Динамічний графік сонячного вітру -->
-            <div class="chart-container">
-                <canvas id="breathChart"></canvas>
+
+        <!-- Другий ряд: SOHO C3 (синій) + 3 інші фото SDO -->
+        <div class="row">
+            <div class="gif-container blue-gif">
+                <p><strong>LASCO C3 — анімація ~48 годин (зовнішня корона, синій відтінок)</strong></p>
+                <img src="https://soho.nascom.nasa.gov/data/LATEST/current_c3.gif" alt="LASCO C3 animation" loading="lazy">
             </div>
-            <!-- Жива спектрограма ORFEES -->
-            <div class="spectrogram-container">
-                <iframe
-                    src="https://realtime.obs-nancay.fr/orfees/"
-                    loading="lazy"
-                    referrerpolicy="no-referrer"
-                    sandbox="allow-scripts allow-same-origin">
-                </iframe>
+            <div class="photos">
+                <img src="https://sdo.gsfc.nasa.gov/assets/img/latest/latest_1024_0211.jpg" alt="AIA 211 Å" loading="lazy">
+                <img src="https://sdo.gsfc.nasa.gov/assets/img/latest/latest_1024_0131.jpg" alt="AIA 131 Å" loading="lazy">
+                <img src="https://sdo.gsfc.nasa.gov/assets/img/latest/latest_1024_0094.jpg" alt="AIA 094 Å" loading="lazy">
             </div>
+        </div>
+
+        <p class="refresh">Оновіть сторінку (F5), щоб побачити найсвіжіші дані!</p>
+
+        <div class="note">
+            <p>Джерела: NASA/ESA SOHO LASCO & NASA SDO AIA<br>
+            Анімації оновлюються автоматично на сервері кожну годину.</p>
         </div>
     </div>
-</div>
-
-<script>
-const labels = [];
-const dataBt = [];
-const dataBz = [];
-const dataPressure = [];
-const dataKp = [];
-const ctx = document.getElementById('breathChart').getContext('2d');
-const breathChart = new Chart(ctx, {
-  type: 'line',
-  data: {
-    labels: labels,
-    datasets: [
-      {
-        label: 'IMF Bt (nT)',
-        data: dataBt,
-        borderColor: '#0ff',
-        backgroundColor: 'rgba(0,255,255,0.1)',
-        borderWidth: 2,
-        tension: 0.4
-      },
-      {
-        label: 'IMF Bz (nT)',
-        data: dataBz,
-        borderColor: '#f0f',
-        backgroundColor: 'rgba(255,0,255,0.1)',
-        borderWidth: 2,
-        tension: 0.4
-      },
-      {
-        label: 'Dynamic Pressure (nPa)',
-        data: dataPressure,
-        borderColor: '#ff0',
-        backgroundColor: 'rgba(255,255,0,0.1)',
-        borderWidth: 2,
-        tension: 0.4
-      },
-      {
-        label: 'Kp Index',
-        data: dataKp,
-        borderColor: '#0f0',
-        backgroundColor: 'rgba(0,255,0,0.1)',
-        borderWidth: 2,
-        tension: 0.4
-      }
-    ]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      x: {
-        ticks: { color: '#9ff' },
-        grid: { color: '#033' }
-      },
-      y: {
-        ticks: { color: '#9ff' },
-        grid: { color: '#033' }
-      }
-    },
-    plugins: {
-      legend: {
-        labels: { color: '#cff' }
-      }
-    }
-  }
-});
-
-async function updateData() {
-  try {
-    // Оригінальні дані сонячного вітру (верхній блок — без змін)
-    const plasma = await fetch("https://services.swpc.noaa.gov/products/solar-wind/plasma-1-day.json").then(r => r.json());
-    const mag = await fetch("https://services.swpc.noaa.gov/products/solar-wind/mag-1-day.json").then(r => r.json());
-    const kp = await fetch("https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json").then(r => r.json());
-
-    const p = plasma[plasma.length - 1];
-    const m = mag[mag.length - 1];
-    const k = kp[kp.length - 1];
-
-    const time = new Date().toLocaleTimeString();
-
-    labels.push(time);
-    if (labels.length > 30) {
-      labels.shift();
-      dataBt.shift();
-      dataBz.shift();
-      dataPressure.shift();
-      dataKp.shift();
-    }
-
-    dataBt.push(parseFloat(m[6]) || 0);
-    dataBz.push(parseFloat(m[3]) || 0);
-    dataPressure.push(parseFloat(p[7]) || 0);
-    dataKp.push(parseFloat(k[1]) || 0);
-
-    document.getElementById("sw_speed").textContent = p[2] || '—';
-    document.getElementById("sw_density").textContent = p[1] || '—';
-    document.getElementById("sw_temp").textContent = p[3] || '—';
-    document.getElementById("imf_bt").textContent = m[6] || '—';
-    document.getElementById("imf_bz").textContent = m[3] || '—';
-    document.getElementById("imf_by").textContent = m[2] || '—';
-    document.getElementById("pressure").textContent = p[7] || '—';
-    document.getElementById("kp").textContent = k[1] || '—';
-
-    document.getElementById("dst").textContent = "NOAA Dst realtime";
-    document.getElementById("ae").textContent = "Auroral activity active";
-    document.getElementById("proton_flux").textContent = "SWPC GOES";
-    document.getElementById("electron_flux").textContent = "SWPC GOES";
-
-    const kpVal = parseFloat(k[1]);
-    document.getElementById("storm").textContent =
-      kpVal >= 8 ? "G4–G5" :
-      kpVal >= 7 ? "G3" :
-      kpVal >= 6 ? "G2" :
-      kpVal >= 5 ? "G1" : "Quiet";
-
-    // ВИПРАВЛЕНИЙ БЛОК: дані про спалахи (solar.flare.activity)
-    // 1. Latest GOES X-Ray Flux Class (новий правильний endpoint)
-    const xray = await fetch("https://services.swpc.noaa.gov/json/goes/primary/xrays-6-hour.json").then(r => r.json());
-    const latestXray = xray[xray.length - 1];
-    const flux = latestXray.flux; // вже в W/m² (наприклад 8.5e-8 для B8.5)
-    const flareClass = classifyFlare(flux);
-    document.getElementById("flare_class").textContent = flareClass || '—';
-
-    // 2. F10.7 та Sunspot Number
-    const indices = await fetch("https://services.swpc.noaa.gov/json/solar-cycle/observed-solar-cycle-indices.json").then(r => r.json());
-    const latestIndices = indices[indices.length - 1];
-    document.getElementById("f107").textContent = latestIndices.f10_7 || latestIndices["f10.7"] || '—';
-    document.getElementById("sunspot").textContent = latestIndices.ssn || '—';
-
-    // 3. X-class flares за останні 7 днів (DONKI без параметрів працює)
-    const flares = await fetch("https://kauai.ccmc.gsfc.nasa.gov/DONKI/WS/get/FLR").then(r => r.json());
-    const now = Date.now();
-    const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
-    const recentFlares = flares.filter(f => new Date(f.peakTime) > sevenDaysAgo);
-    const xFlares = recentFlares.filter(f => f.classType && f.classType.startsWith('X'));
-    document.getElementById("x_flares_count").textContent = xFlares.length;
-
-    if (xFlares.length > 0) {
-      const strongest = xFlares.reduce((max, f) => {
-        const val = parseFloat(f.classType.substring(1)) || 0;
-        const maxVal = parseFloat(max.classType.substring(1)) || 0;
-        return val > maxVal ? f : max;
-      });
-      document.getElementById("strongest_flare").textContent = strongest.classType + ` (${new Date(strongest.peakTime).toLocaleString()})`;
-    } else {
-      document.getElementById("strongest_flare").textContent = "None";
-    }
-
-    breathChart.update();
-  } catch (e) {
-    console.error("DATA ERROR", e);
-  }
-}
-
-// Функція класифікації спалаху (працює з числом у W/m²)
-function classifyFlare(flux) {
-  if (typeof flux !== 'number' || flux <= 0) return '—';
-  if (flux >= 1e-4) return 'X' + (flux / 1e-4).toFixed(1);
-  if (flux >= 1e-5) return 'M' + (flux / 1e-5).toFixed(1);
-  if (flux >= 1e-6) return 'C' + (flux / 1e-6).toFixed(1);
-  if (flux >= 1e-7) return 'B' + (flux / 1e-7).toFixed(1);
-  return 'A' + (flux / 1e-8).toFixed(1);
-}
-
-updateData();
-setInterval(updateData, 60000); // Оновлення кожну хвилину
-</script>
 </body>
 </html>
