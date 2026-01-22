@@ -2,10 +2,10 @@
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
-<title>GEOMETRIC CHAOS · INTERLACED FORMS</title>
+<title>GEOMETRIC CHAOS · ENERGY FLOW</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-html,body{
+html, body{
   margin:0; padding:0;
   width:100%; height:100%;
   background:#000;
@@ -18,10 +18,10 @@ canvas{ display:block; position:fixed; inset:0; z-index:0; }
   position:fixed;
   bottom:0; left:50%;
   transform:translateX(-50%);
-  width:95%; max-width:800px;
+  width:95%; max-width:900px;
   background:rgba(0,0,0,0.5);
   color:#0f0; font-size:11px;
-  padding:6px 10px;
+  padding:6px 12px;
   border-radius:6px;
   line-height:1.2;
   z-index:2;
@@ -44,7 +44,7 @@ canvas{ display:block; position:fixed; inset:0; z-index:0; }
 <canvas id="c"></canvas>
 <div id="dataPanel">ініціалізація...</div>
 <div id="info">
-фізико-геометрична система. симуляція реальних та модельованих даних. кожен показник — окремий об’єкт.
+фізико-геометрична система. симуляція реальних даних планети. кожен показник — окремий потік, який “дихає”.
 </div>
 
 <script>
@@ -75,7 +75,7 @@ const dataKeys = [
 ];
 const data={};
 const history={};
-const HISTORY_LEN=400;
+const HISTORY_LEN=300;
 dataKeys.forEach(k=>{data[k]=0.5; history[k]=[];});
 
 /* ===================== COLORS ===================== */
@@ -162,88 +162,17 @@ async function fetchData(){
 fetchData();
 setInterval(fetchData,120000);
 
-/* ===================== FIGURES ===================== */
-const shapes = [
-  {type:"circle",size:30,angle:0,phase:0},
-  {type:"triangle",size:30,angle:0,phase:0.6},
-  {type:"square",size:30,angle:0,phase:1.2},
-  {type:"pentagon",size:30,angle:0,phase:1.8},
-  {type:"hexagon",size:30,angle:0,phase:2.4},
-  {type:"star",size:25,angle:0,phase:3.0},
-  {type:"diamond",size:25,angle:0,phase:3.6},
-  {type:"cross",size:25,angle:0,phase:4.2},
-  {type:"ellipse",size:30,angle:0,phase:4.8},
-  {type:"octagon",size:30,angle:0,phase:5.4},
-];
-
-/* ===================== DRAW SHAPE ===================== */
-function drawShape(x,y,s,angle,type,color){
-  ctx.save();
-  ctx.translate(x,y);
-  ctx.rotate(angle);
-  ctx.strokeStyle=color;
-  ctx.lineWidth=2;
-  ctx.beginPath();
-  switch(type){
-    case"circle": ctx.arc(0,0,s,0,Math.PI*2); break;
-    case"triangle":
-      for(let i=0;i<3;i++){
-        const a=i*2*Math.PI/3;
-        const px=Math.cos(a)*s, py=Math.sin(a)*s;
-        i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
-      }
-      ctx.closePath();
-      break;
-    case"square":
-      for(let i=0;i<4;i++){
-        const a=i*2*Math.PI/4+Math.PI/4;
-        const px=Math.cos(a)*s, py=Math.sin(a)*s;
-        i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
-      }
-      ctx.closePath();
-      break;
-    case"pentagon":
-      for(let i=0;i<5;i++){
-        const a=i*2*Math.PI/5-Math.PI/2;
-        const px=Math.cos(a)*s, py=Math.sin(a)*s;
-        i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
-      }
-      ctx.closePath();
-      break;
-    case"hexagon":
-      for(let i=0;i<6;i++){
-        const a=i*2*Math.PI/6;
-        const px=Math.cos(a)*s, py=Math.sin(a)*s;
-        i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
-      }
-      ctx.closePath();
-      break;
-    case"star":
-      for(let i=0;i<5;i++){
-        const a=i*2*Math.PI/5;
-        const px=Math.cos(a)*s, py=Math.sin(a)*s;
-        ctx.lineTo(px,py);
-      }
-      ctx.closePath();
-      break;
-    case"diamond":
-      ctx.moveTo(0,-s); ctx.lineTo(s,0); ctx.lineTo(0,s); ctx.lineTo(-s,0); ctx.closePath();
-      break;
-    case"cross":
-      ctx.moveTo(-s,0); ctx.lineTo(s,0); ctx.moveTo(0,-s); ctx.lineTo(0,s); break;
-    case"ellipse":
-      ctx.ellipse(0,0,s,s*0.6,0,0,Math.PI*2); break;
-    case"octagon":
-      for(let i=0;i<8;i++){
-        const a=i*2*Math.PI/8+Math.PI/8;
-        const px=Math.cos(a)*s, py=Math.sin(a)*s;
-        i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
-      }
-      ctx.closePath();
-      break;
-  }
-  ctx.stroke();
-  ctx.restore();
+/* ===================== FLOW LINES ===================== */
+const lines=[];
+const MAX_LINES=60;
+for(let i=0;i<MAX_LINES;i++){
+  lines.push({
+    x:Math.random()*w, y:Math.random()*h,
+    vx:0, vy:0,
+    phase:Math.random()*Math.PI*2,
+    color: colors[i%colors.length],
+    param: dataKeys[i%dataKeys.length]
+  });
 }
 
 /* ===================== LOOP ===================== */
@@ -262,16 +191,27 @@ function loop(){
     ctx.fillRect(s.x,s.y,s.size,s.size);
   });
 
-  // фігури по даних
-  const cx=w/2, cy=h/2;
-  shapes.forEach((s,i)=>{
-    const v=data[dataKeys[i]]||0.5;
-    const angle=t*0.5 + s.phase;
-    const radius=50+v*200 + 30*Math.sin(t+i);
-    const x=cx+Math.cos(angle)*(radius);
-    const y=cy+Math.sin(angle)*(radius);
-    const size=20 + v*30;
-    drawShape(x,y,size,angle,s.type,colors[i%colors.length]);
+  // лінії потоків
+  lines.forEach(l=>{
+    const v = data[l.param]||0.5;
+    const angle = t*0.5 + l.phase;
+    const speed = 0.5 + v*3 + data.chaos*2;
+    l.vx += Math.cos(angle)*0.02*v;
+    l.vy += Math.sin(angle)*0.02*v;
+    l.x += l.vx*speed;
+    l.y += l.vy*speed;
+    l.vx *=0.95; l.vy*=0.95;
+
+    // wrap around
+    if(l.x>w) l.x=0; if(l.x<0) l.x=w;
+    if(l.y>h) l.y=0; if(l.y<0) l.y=h;
+
+    ctx.beginPath();
+    ctx.moveTo(l.x-l.vx*5,l.y-l.vy*5);
+    ctx.lineTo(l.x,l.y);
+    ctx.strokeStyle=l.color;
+    ctx.lineWidth=1+v*2;
+    ctx.stroke();
   });
 
   updatePanel();
