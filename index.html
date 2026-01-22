@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
-<title>GEOMETRIC CHAOS · DATA-DRIVEN GEOMETRY</title>
+<title>GEOMETRIC CHAOS · FUTURISTIC DATA</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -29,8 +29,8 @@ canvas{
   left:0;
   width:260px;
   height:100%;
-  background:rgba(0,0,0,0.55);
-  border-right:1px solid rgba(120,180,255,0.15);
+  background:rgba(0,0,0,0.6);
+  border-right:1px solid rgba(0,200,255,0.2);
   padding:12px;
   box-sizing:border-box;
   z-index:2;
@@ -45,15 +45,17 @@ canvas{
 
 #data{
   font-size:11px;
-  line-height:1.45;
+  line-height:1.4;
   white-space:pre;
   margin-bottom:12px;
+  max-height:180px;
+  overflow-y:auto;
 }
 
 #graph{
   width:100%;
   height:160px;
-  border:1px solid rgba(120,180,255,0.15);
+  border:1px solid rgba(0,200,255,0.2);
 }
 
 #info{
@@ -117,23 +119,24 @@ const data={
   atmosphere_temp:0.5,
   ocean:0.5,
   solar_radiation:0.5,
-  solar_wind:0.5,
-  precipitation:0.5,
+  solar_wind:0.4,
+  precipitation:0.3,
   chaos:0.35
 };
 
 /* ===================== HISTORY ===================== */
-const history=[];
+const history={};
 const HISTORY_LEN=200;
+for(const k in data) history[k]=[];
 
 /* ===================== DATA UPDATE ===================== */
 function updateData(){
   for(const k in data){
     data[k]+= (Math.random()-0.5)*0.01;
     data[k]=Math.max(0,Math.min(1,data[k]));
+    history[k].push(data[k]);
+    if(history[k].length>HISTORY_LEN) history[k].shift();
   }
-  history.push(data.chaos);
-  if(history.length>HISTORY_LEN) history.shift();
 }
 
 /* ===================== PANEL ===================== */
@@ -149,33 +152,32 @@ function drawPanel(){
 /* ===================== GRAPH ===================== */
 function drawGraph(){
   gCtx.clearRect(0,0,gCanvas.width,gCanvas.height);
-  gCtx.strokeStyle="rgba(120,200,255,0.6)";
-  gCtx.beginPath();
-  history.forEach((v,i)=>{
-    const x=i/HISTORY_LEN*gCanvas.width;
-    const y=gCanvas.height-(v*gCanvas.height);
-    if(i===0) gCtx.moveTo(x,y);
-    else gCtx.lineTo(x,y);
-  });
-  gCtx.stroke();
-}
-
-/* ===================== STARS ===================== */
-const stars=[];
-for(let i=0;i<400;i++){
-  stars.push({
-    x:Math.random()*w,
-    y:Math.random()*h,
-    s:Math.random()*1.5+0.3,
-    p:Math.random()*Math.PI*2
-  });
+  const colors=[
+    "rgba(255,80,80,0.7)","rgba(80,180,255,0.7)","rgba(80,255,160,0.7)",
+    "rgba(255,180,60,0.7)","rgba(255,100,200,0.7)","rgba(100,200,255,0.7)",
+    "rgba(255,240,100,0.7)","rgba(200,120,255,0.7)","rgba(100,220,255,0.7)",
+    "rgba(255,255,255,0.7)"
+  ];
+  let i=0;
+  for(const k in history){
+    gCtx.strokeStyle=colors[i%colors.length];
+    gCtx.beginPath();
+    history[k].forEach((v,j)=>{
+      const x=j/HISTORY_LEN*gCanvas.width;
+      const y=gCanvas.height-(v*gCanvas.height);
+      if(j===0) gCtx.moveTo(x,y);
+      else gCtx.lineTo(x,y);
+    });
+    gCtx.stroke();
+    i++;
+  }
 }
 
 /* ===================== FIGURE SETTINGS ===================== */
 const figures=[
-  {param:"seismic", type:"circle", color:[255,100,100]},
-  {param:"magnetic", type:"triangle", color:[100,180,255]},
-  {param:"atmosphere_wind", type:"square", color:[100,255,160]},
+  {param:"seismic", type:"circle", color:[255,80,80]},
+  {param:"magnetic", type:"triangle", color:[80,180,255]},
+  {param:"atmosphere_wind", type:"square", color:[80,255,160]},
   {param:"atmosphere_pressure", type:"pentagon", color:[255,180,60]},
   {param:"atmosphere_temp", type:"hexagon", color:[255,100,200]},
   {param:"ocean", type:"star", color:[100,200,255]},
@@ -187,17 +189,15 @@ const figures=[
 
 /* ===================== DRAW FIGURE ===================== */
 function drawFigure(f,v,i){
-  const angle=t*0.2 + i;
-  const radius=60+v*120;
+  const angle=t*0.3 + i*0.6;
+  const radius=50+v*140;
   const sidesMap={circle:30,triangle:3,square:4,pentagon:5,hexagon:6,star:5};
   const sides=sidesMap[f.type]||3;
 
   ctx.beginPath();
   for(let s=0;s<=sides;s++){
     let a=(Math.PI*2/sides)*s;
-    if(f.type==="star"){
-      a=a*2;
-    }
+    if(f.type==="star") a*=2;
     const r=(f.type==="circle"||f.type==="star")?radius:radius*(0.8+0.2*Math.sin(t+i));
     const x=cx+Math.cos(a+angle)*r;
     const y=cy+Math.sin(a+angle)*r;
@@ -205,8 +205,8 @@ function drawFigure(f,v,i){
     else ctx.lineTo(x,y);
   }
   ctx.closePath();
-  ctx.strokeStyle=`rgba(${f.color[0]},${f.color[1]},${f.color[2]},${0.05+v*0.3})`;
-  ctx.lineWidth=0.8+v*2;
+  ctx.strokeStyle=`rgba(${f.color[0]},${f.color[1]},${f.color[2]},${0.05+v*0.5})`;
+  ctx.lineWidth=0.8+v*2.5;
   ctx.stroke();
 }
 
@@ -232,17 +232,10 @@ function loop(){
   drawPanel();
   drawGraph();
 
-  t+=0.01+data.atmosphere_temp*0.01;
+  t+=0.015+data.atmosphere_temp*0.015;
 
-  ctx.fillStyle="rgba(0,0,0,0.18)";
+  ctx.fillStyle="rgba(0,0,0,0.15)";
   ctx.fillRect(0,0,w,h);
-
-  /* ---- star field ---- */
-  stars.forEach(s=>{
-    const n=Math.sin(t+s.p)*data.atmosphere_wind*2;
-    ctx.fillStyle=`rgba(180,220,255,${0.12+data.solar_radiation*0.3})`;
-    ctx.fillRect(s.x+n,s.y+n,s.s,s.s);
-  });
 
   /* ---- draw figures per parameter ---- */
   figures.forEach((f,i)=>{
