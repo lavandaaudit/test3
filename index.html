@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
-<title>GEOMETRIC CHAOS · PHYSICAL DATA MONITOR</title>
+<title>GEOMETRIC CHAOS · DATA-DRIVEN GEOMETRY</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -17,7 +17,6 @@ html,body{
   color:#9fe7ff;
 }
 
-/* ===== layout ===== */
 canvas{
   position:fixed;
   inset:0;
@@ -70,7 +69,6 @@ canvas{
 }
 </style>
 </head>
-
 <body>
 
 <canvas id="c"></canvas>
@@ -82,8 +80,8 @@ canvas{
 </div>
 
 <div id="info">
-фізико-геометрична система. симуляція реальних та модельованих даних.
-геометрія є відображенням стану фізичних процесів.
+фізико-геометрична система. симуляція реальних та модельованих даних. 
+кожен показник відповідає окремій фігурі.
 </div>
 
 <script>
@@ -112,19 +110,19 @@ let t=0;
 
 /* ===================== DATA ===================== */
 const data={
-  seismic:0.30,
-  magnetic:0.40,
-  atmosphere_wind:0.50,
-  atmosphere_pressure:0.60,
-  atmosphere_temp:0.50,
-  ocean:0.40,
-  solar_radiation:0.50,
-  solar_wind:0.40,
-  precipitation:0.30,
+  seismic:0.3,
+  magnetic:0.4,
+  atmosphere_wind:0.5,
+  atmosphere_pressure:0.5,
+  atmosphere_temp:0.5,
+  ocean:0.5,
+  solar_radiation:0.5,
+  solar_wind:0.5,
+  precipitation:0.5,
   chaos:0.35
 };
 
-/* ===================== DATA HISTORY ===================== */
+/* ===================== HISTORY ===================== */
 const history=[];
 const HISTORY_LEN=200;
 
@@ -148,7 +146,7 @@ function drawPanel(){
   dataDiv.textContent=out;
 }
 
-/* ===================== GRAPH DRAW ===================== */
+/* ===================== GRAPH ===================== */
 function drawGraph(){
   gCtx.clearRect(0,0,gCanvas.width,gCanvas.height);
   gCtx.strokeStyle="rgba(120,200,255,0.6)";
@@ -164,7 +162,7 @@ function drawGraph(){
 
 /* ===================== STARS ===================== */
 const stars=[];
-for(let i=0;i<500;i++){
+for(let i=0;i<400;i++){
   stars.push({
     x:Math.random()*w,
     y:Math.random()*h,
@@ -173,8 +171,47 @@ for(let i=0;i<500;i++){
   });
 }
 
+/* ===================== FIGURE SETTINGS ===================== */
+const figures=[
+  {param:"seismic", type:"circle", color:[255,100,100]},
+  {param:"magnetic", type:"triangle", color:[100,180,255]},
+  {param:"atmosphere_wind", type:"square", color:[100,255,160]},
+  {param:"atmosphere_pressure", type:"pentagon", color:[255,180,60]},
+  {param:"atmosphere_temp", type:"hexagon", color:[255,100,200]},
+  {param:"ocean", type:"star", color:[100,200,255]},
+  {param:"solar_radiation", type:"circle", color:[255,240,100]},
+  {param:"solar_wind", type:"triangle", color:[200,120,255]},
+  {param:"precipitation", type:"square", color:[100,220,255]},
+  {param:"chaos", type:"hexagon", color:[255,255,255]}
+];
+
+/* ===================== DRAW FIGURE ===================== */
+function drawFigure(f,v,i){
+  const angle=t*0.2 + i;
+  const radius=60+v*120;
+  const sidesMap={circle:30,triangle:3,square:4,pentagon:5,hexagon:6,star:5};
+  const sides=sidesMap[f.type]||3;
+
+  ctx.beginPath();
+  for(let s=0;s<=sides;s++){
+    let a=(Math.PI*2/sides)*s;
+    if(f.type==="star"){
+      a=a*2;
+    }
+    const r=(f.type==="circle"||f.type==="star")?radius:radius*(0.8+0.2*Math.sin(t+i));
+    const x=cx+Math.cos(a+angle)*r;
+    const y=cy+Math.sin(a+angle)*r;
+    if(s===0) ctx.moveTo(x,y);
+    else ctx.lineTo(x,y);
+  }
+  ctx.closePath();
+  ctx.strokeStyle=`rgba(${f.color[0]},${f.color[1]},${f.color[2]},${0.05+v*0.3})`;
+  ctx.lineWidth=0.8+v*2;
+  ctx.stroke();
+}
+
 /* ===================== ATTRACTOR ===================== */
-let ax=0.1, ay=0, az=0;
+let ax=0,ay=0,az=0;
 function stepAttractor(){
   const sigma=10+data.magnetic*10;
   const rho=28+data.chaos*25;
@@ -189,15 +226,15 @@ function stepAttractor(){
   az+=dz*0.003;
 }
 
-/* ===================== DRAW ===================== */
+/* ===================== LOOP ===================== */
 function loop(){
   updateData();
   drawPanel();
   drawGraph();
 
-  t+=0.01 + data.atmosphere_temp*0.015;
+  t+=0.01+data.atmosphere_temp*0.01;
 
-  ctx.fillStyle="rgba(0,0,0,0.22)";
+  ctx.fillStyle="rgba(0,0,0,0.18)";
   ctx.fillRect(0,0,w,h);
 
   /* ---- star field ---- */
@@ -207,47 +244,18 @@ function loop(){
     ctx.fillRect(s.x+n,s.y+n,s.s,s.s);
   });
 
-  /* ---- GEOMETRIC CORE : 10 FIGURES ---- */
-  for(let i=0;i<10;i++){
-    const sides=3+i;
-    const base=80+i*45;
-    ctx.beginPath();
-    for(let j=0;j<=sides;j++){
-      const a=j/sides*Math.PI*2;
-      const mod=
-        Math.sin(
-          t*0.6 +
-          i*1.1 +
-          j*0.9
-        )*
-        (40*data.seismic +
-         50*data.ocean +
-         60*data.chaos);
+  /* ---- draw figures per parameter ---- */
+  figures.forEach((f,i)=>{
+    const v=data[f.param]||0.5;
+    drawFigure(f,v,i);
+  });
 
-      const r=base+mod;
-      const x=cx+Math.cos(a+t*0.15)*r;
-      const y=cy+Math.sin(a+t*0.15)*r;
-
-      if(j===0) ctx.moveTo(x,y);
-      else ctx.lineTo(x,y);
-    }
-
-    ctx.strokeStyle=`rgba(
-      ${140+data.solar_radiation*100},
-      ${160+data.atmosphere_temp*80},
-      255,
-      ${0.03+i*0.01+data.solar_wind*0.15}
-    )`;
-    ctx.lineWidth=0.6+data.atmosphere_pressure*1.2;
-    ctx.stroke();
-  }
-
-  /* ---- ATTRACTOR OVERLAY ---- */
+  /* ---- attractor overlay ---- */
   stepAttractor();
   ctx.save();
   ctx.translate(cx,cy);
   ctx.beginPath();
-  ctx.strokeStyle=`rgba(255,120,200,${0.12+data.chaos*0.35})`;
+  ctx.strokeStyle=`rgba(255,120,200,${0.1+data.chaos*0.3})`;
   ctx.lineWidth=1;
   ctx.lineTo(ax*8,ay*8);
   ctx.stroke();
@@ -260,4 +268,3 @@ loop();
 </script>
 </body>
 </html>
-
