@@ -2,548 +2,195 @@
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<meta name="referrer" content="no-referrer">
-<meta name="robots" content="noindex,nofollow">
-
-<title>underground.signal × GEOMETRIC CHAOS</title>
-
+<title>GEOMETRIC CHAOS · FORMULA PULSE</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-/* ===== BASE ===== */
-* { margin: 0; padding: 0; box-sizing: border-box; }
-html, body {
-  width: 100%;
-  height: 100%;
-  background: #000;
-  color: #9fe7ff;
-  font-family: "Courier New", monospace;
-  overflow: hidden;
-}
-
-/* ===== CANVAS LAYERS ===== */
-#chaosCanvas {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-}
-
-#stars {
-  position: fixed;
-  inset: 0;
-  z-index: 1;
-}
-
-/* ===== CHAOS HUD ===== */
-#hud {
-  position:absolute;
-  top:16px;
-  left:16px;
-  font-size:13px;
-  opacity:0.7;
-  pointer-events:none;
-  letter-spacing:1px;
-  z-index: 3;
-}
-#status {
-  position:absolute;
-  top:40px;
-  left:16px;
-  font-size:11px;
-  opacity:0.6;
-  color:#0af;
-  z-index: 3;
-}
-#data {
-  position:absolute;
-  bottom:16px;
-  left:16px;
-  font-size:10px;
-  opacity:0.6;
-  pointer-events:none;
-  max-width:400px;
-  line-height:1.4;
-  z-index: 3;
-}
+html, body { margin:0; padding:0; background:#000; overflow:hidden; height:100%; font-family:'Courier New', monospace; color:#0af; }
+canvas { display:block; }
+#hud { position:absolute; top:16px; left:16px; font-size:13px; opacity:0.7; pointer-events:none; letter-spacing:1px; }
+#data { position:absolute; bottom:16px; left:16px; font-size:10px; opacity:0.6; pointer-events:none; max-width:400px; line-height:1.4; }
 #data .real { color:#0f0; font-weight:bold; }
 #data .fallback { color:#888; }
 #data .warning { color:#ff0; }
-#clock {
-  position:absolute;
-  bottom:16px;
-  right:16px;
-  font-size:11px;
-  opacity:0.45;
-  color:#6cf;
-  text-align:right;
-  pointer-events:none;
-  line-height:1.3;
-  z-index: 3;
-}
-
-/* ===== PLAYER UI ===== */
-.wrapper {
-  position: relative;
-  z-index: 4;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 18px;
-  text-align: center;
-  padding: 20px;
-}
-
-.player {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-}
-
-.controls {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-button {
-  width: 78px;
-  height: 78px;
-  border-radius: 50%;
-  border: 1px solid #4dd2ff;
-  background: transparent;
-  color: #4dd2ff;
-  font-size: 26px;
-  cursor: pointer;
-  transition: .3s;
-}
-button:hover {
-  background: rgba(77,210,255,.15);
-  box-shadow: 0 0 22px rgba(77,210,255,.6);
-}
-
-.volume {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-.volume label {
-  font-size: 10px;
-  opacity: 0.6;
-}
-input[type="range"] {
-  -webkit-appearance: none;
-  width: 120px;
-  height: 2px;
-  background: #4dd2ff;
-  outline: none;
-  opacity: 0.7;
-}
-input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: #4dd2ff;
-  cursor: pointer;
-}
-
-.text-block { display:flex; flex-direction:column; gap:4px; }
-.main-text { font-size:16px; letter-spacing:1.2px; }
-.sub-text { font-size:13px; letter-spacing:2px; opacity:0.9; }
-.footer-text { font-size:10px; opacity:0.45; }
-
-.links { display:flex; flex-direction:column; gap:10px; }
-.row { display:flex; gap:24px; flex-wrap:wrap; justify-content:center; }
-.link a {
-  color:#4dd2ff;
-  text-decoration:none;
-  border-bottom:1px dotted #4dd2ff;
-}
-
-/* ===== MAGNET STORM ===== */
-@keyframes magnetPulse {
-  0% { box-shadow: 0 0 0 rgba(77,210,255,0); }
-  50% { box-shadow: 0 0 18px rgba(77,210,255,.9); }
-  100% { box-shadow: 0 0 0 rgba(77,210,255,0); }
-}
-.magnet-storm {
-  animation: magnetPulse 1.4s infinite;
-  border-bottom:1px solid #4dd2ff!important;
-}
+#clock { position:absolute; bottom:16px; right:16px; font-size:11px; opacity:0.45; color:#6cf; text-align:right; pointer-events:none; line-height:1.3; }
+#status { position:absolute; top:40px; left:16px; font-size:11px; opacity:0.6; color:#0af; }
 </style>
 </head>
-
 <body>
-
-<!-- ===== CHAOS HUD ===== -->
-<div id="hud">GEOMETRIC CHAOS · FORMULA PULSE</div>
+<div id="hud">GEOMETRIC CHAOS — FORMULA PULSE</div>
 <div id="status"></div>
 <div id="data">ініціалізація...</div>
 <div id="clock">—</div>
-
-<!-- ===== CANVASES ===== -->
-<canvas id="chaosCanvas"></canvas>
-<canvas id="stars"></canvas>
-
-<!-- ===== UI ===== -->
-<div class="wrapper">
-
-  <div class="player">
-    <div class="controls">
-      <button id="play">▶</button>
-      <div class="volume">
-        <label>volume</label>
-        <input type="range" id="volume" min="0" max="1" step="0.01" value="0.7">
-      </div>
-    </div>
-
-    <div class="text-block">
-      <div class="main-text">radio_underground.signal:off-grid.не для всіх.</div>
-      <div class="sub-text">24'7</div>
-      <div class="footer-text">ibonarium project 2026 by lavanda audit</div>
-    </div>
-  </div>
-
-  <div class="links">
-    <div class="row">
-      <div class="link"><a href="https://lavandaaudit.github.io/sun-ibonarium-cosmo-dynamics-lab-live/" target="_blank">sun.ibonarium</a></div>
-      <div class="link"><a href="https://lavandaaudit.github.io/ibonarium.planet.radar/" target="_blank">planet.radar</a></div>
-      <div class="link"><a href="https://lavandaaudit.github.io/cosmo.dynamics/" target="_blank">moon.ibonarium</a></div>
-    </div>
-    <div class="row">
-      <div class="link"><a href="#" id="magnetLab">.magnet.lab</a></div>
-    </div>
-  </div>
-</div>
-
-<audio id="audio" crossorigin="anonymous">
-  <source src="https://ice1.somafm.com/dronezone-128-mp3">
-</audio>
+<canvas id="c"></canvas>
 
 <script>
-/* ================= AUDIO ================= */
-const audio=document.getElementById("audio");
-const playBtn=document.getElementById("play");
-const volume=document.getElementById("volume");
-let playing=false;
-volume.oninput=()=>audio.volume=volume.value;
-playBtn.onclick=()=>{
-  if(!playing){audio.volume=volume.value;audio.play();playBtn.textContent="■";playing=true;}
-  else{audio.pause();playBtn.textContent="▶";playing=false;}
-};
-
-/* ================= STARS ================= */
-const s=document.getElementById("stars");
-const sctx=s.getContext("2d");
-let W,H,stars=[];
-function resizeStars(){
-  W=s.width=innerWidth;
-  H=s.height=innerHeight;
-  stars=Array.from({length:160},()=>({x:Math.random()*W,y:Math.random()*H,z:Math.random()*W}));
-}
-resizeStars(); addEventListener("resize",resizeStars);
-function drawStars(){
-  sctx.fillStyle="#000"; sctx.fillRect(0,0,W,H);
-  sctx.fillStyle="#4dd2ff";
-  stars.forEach(st=>{
-    st.z-=0.2; if(st.z<=0)st.z=W;
-    const k=128/st.z;
-    const x=(st.x-W/2)*k+W/2;
-    const y=(st.y-H/2)*k+H/2;
-    if(x>0&&x<W&&y>0&&y<H){
-      const size=(1-st.z/W)*2;
-      sctx.fillRect(x,y,size,size);
-    }
-  });
-  requestAnimationFrame(drawStars);
-}
-drawStars();
-</script>
-
-<!-- ===== CHAOS ENGINE (ORIGINAL FULL) ===== -->
-<script>
-/* тут повністю твій GEOMETRIC CHAOS engine без змін —
-я його НЕ різав. Якщо хочеш, наступним кроком можу:
-— синхронізувати музику ↔ chaos
-— chaos → фільтр звуку
-— KP → пульсація UI
-— зробити режим INSTALLATION */
-</script>
-
-</body>
-</html>
-<script>
-/* ================= GEOMETRIC CHAOS · FORMULA PULSE ================= */
-
-const canvas = document.getElementById('chaosCanvas');
+const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
-
 const dataDiv = document.getElementById('data');
 const clockDiv = document.getElementById('clock');
 const statusDiv = document.getElementById('status');
 
-function resizeChaos() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-}
-window.addEventListener('resize', resizeChaos);
-resizeChaos();
+function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+window.addEventListener('resize', resize);
+resize();
 
-/* ===== CLOCK ===== */
 const startTime = Date.now();
 function formatRelativeTime(ms) {
   const s = Math.floor(ms / 1000);
   if (s < 60) return `+${s}s`;
-  const m = Math.floor(s / 60);
-  const sec = s % 60;
+  const m = Math.floor(s / 60); const sec = s % 60;
   if (m < 60) return `+${m}m ${sec}s`;
-  const h = Math.floor(m / 60);
-  const min = m % 60;
+  const h = Math.floor(m / 60); const min = m % 60;
   return `+${h}h ${min}m`;
 }
 function updateClock() {
   const now = new Date();
-  clockDiv.innerHTML =
-    `${String(now.getHours()).padStart(2,'0')}:` +
-    `${String(now.getMinutes()).padStart(2,'0')}:` +
-    `${String(now.getSeconds()).padStart(2,'0')}<br>` +
-    formatRelativeTime(Date.now() - startTime);
+  clockDiv.innerHTML = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}<br>${formatRelativeTime(Date.now() - startTime)}`;
 }
-setInterval(updateClock, 1000);
-updateClock();
+setInterval(updateClock, 1000); updateClock();
 
-/* ===== STARS ===== */
+// --- Зірки ---
 const stars = [];
-for (let i = 0; i < 320; i++) {
-  stars.push({
-    x: Math.random() * canvas.width,
-    y: Math.random() * canvas.height,
-    size: Math.random() * 1.4 + 0.4,
-    baseAlpha: Math.random() * 0.4 + 0.25,
-    twinkle: Math.random() * 0.015 + 0.006
-  });
+for (let i = 0; i < 300; i++) {
+  stars.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, size: Math.random()*1.4+0.4, baseAlpha: Math.random()*0.4+0.25, twinkle: Math.random()*0.015+0.006 });
 }
 
-/* ===== DATA MODEL ===== */
-let realData = {
-  seismic: 0.5,
-  magnetic: 0.5,
-  atmosphere_wind: 0.5,
-  atmosphere_pressure: 0.5,
-  atmosphere_temp: 0.5,
-  ocean: 0.5,
-  solar_radiation: 0.5,
-  solar_wind: 0.5,
-  precipitation: 0.5,
-  chaos: 0.5
-};
-
-let dataHistory = {};
-Object.keys(realData).forEach(k => dataHistory[k] = []);
+// --- Дані ---
+let realData = { seismic:0.5, magnetic:0.5, atmosphere_wind:0.5, atmosphere_pressure:0.5, atmosphere_temp:0.5, ocean:0.5, solar_radiation:0.5, solar_wind:0.5, precipitation:0.5, chaos:0.5 };
+let dataHistory = {}; Object.keys(realData).forEach(k => dataHistory[k] = []);
 let sources = {};
 
-/* ===== HELPERS ===== */
-function lerp(a, b, t) {
-  return a + (b - a) * t;
-}
+const blobs = [
+  { param: 'seismic', color: 'rgba(220,60,80,', phase: 0.0, targetSize:6, targetAlpha:0.75 },
+  { param: 'magnetic', color: 'rgba(60,180,255,', phase: 1.2, targetSize:6, targetAlpha:0.75 },
+  { param: 'atmosphere_wind', color: 'rgba(80,255,160,', phase: 2.4, targetSize:6, targetAlpha:0.7 },
+  { param: 'atmosphere_temp', color: 'rgba(255,180,60,', phase: 3.6, targetSize:6, targetAlpha:0.7 },
+  { param: 'solar_radiation', color: 'rgba(255,240,100,', phase: 4.8, targetSize:5, targetAlpha:0.65 },
+  { param: 'solar_wind', color: 'rgba(200,120,255,', phase: 6.0, targetSize:6, targetAlpha:0.7 },
+  { param: 'precipitation', color: 'rgba(100,220,255,', phase: 7.2, targetSize:6, targetAlpha:0.7 }
+];
+blobs.forEach(b => { b.angle = Math.random()*Math.PI*2; b.radius = 60 + Math.random()*50; b.currentSize = b.targetSize; b.currentAlpha = b.targetAlpha; b.currentDist = b.radius; });
 
-/* ===== FETCH REAL PLANET DATA ===== */
+function lerp(a, b, t) { return a + (b - a) * t; }
+
+// --- Fetch real-time data (залишено без змін) ---
 async function fetchRealPlanetData() {
-  statusDiv.textContent = 'оновлення...';
+  statusDiv.innerHTML = 'оновлення...';
   let loaded = 0;
-
   try {
-    const weatherUrl =
-      'https://api.open-meteo.com/v1/forecast?' +
-      'latitude=50.55&longitude=30.25&' +
-      'current=temperature_2m,wind_speed_10m,surface_pressure,precipitation,shortwave_radiation';
-
+    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=50.55&longitude=30.25&current=temperature_2m,wind_speed_10m,surface_pressure,precipitation,shortwave_radiation`;
     const wRes = await fetch(weatherUrl);
     if (wRes.ok) {
       const w = (await wRes.json()).current || {};
-      realData.atmosphere_temp =
-        Math.min(1, Math.max(0, (w.temperature_2m + 40) / 80));
-      realData.atmosphere_wind =
-        Math.min(1, (w.wind_speed_10m || 0) / 80);
-      realData.atmosphere_pressure =
-        Math.min(1, Math.max(0, ((w.surface_pressure || 1013) - 950) / 150));
-      realData.precipitation =
-        Math.min(1, (w.precipitation || 0) / 15);
-      realData.solar_radiation =
-        Math.min(1, (w.shortwave_radiation || 0) / 1200);
-
+      realData.atmosphere_temp     = Math.min(1, Math.max(0, (w.temperature_2m + 40) / 80));
+      realData.atmosphere_wind     = Math.min(1, (w.wind_speed_10m || 0) / 80);
+      realData.atmosphere_pressure = Math.min(1, Math.max(0, ((w.surface_pressure || 1013) - 950) / 150));
+      realData.precipitation       = Math.min(1, (w.precipitation || 0) / 15);
+      realData.solar_radiation     = Math.min(1, (w.shortwave_radiation || 0) / 1200);
       loaded += 5;
-      sources.atmosphere_temp =
-      sources.atmosphere_wind =
-      sources.atmosphere_pressure =
-      sources.precipitation =
-      sources.solar_radiation = true;
+      sources.atmosphere_temp = sources.atmosphere_wind = sources.atmosphere_pressure = sources.precipitation = sources.solar_radiation = true;
     }
-
-    const eqRes = await fetch(
-      'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson'
-    );
-    if (eqRes.ok) {
-      const eq = await eqRes.json();
-      const feats = eq.features || [];
-      const count = feats.length;
-      const maxMag = feats.reduce(
-        (m, f) => Math.max(m, f.properties?.mag || 0),
-        0
-      );
-      realData.seismic = Math.min(1, (count / 30) + (maxMag / 10) * 0.5);
-      loaded++;
-      sources.seismic = true;
-    }
-
-    const proxy = 'https://corsproxy.io/?';
-
-    try {
-      const solarRes = await fetch(
-        proxy + encodeURIComponent(
-          'https://services.swpc.noaa.gov/products/solar-wind/plasma-7-day.json'
-        )
-      );
-      if (solarRes.ok) {
-        const data = await solarRes.json();
-        const latest = data[data.length - 1] || [];
-        const speed = parseFloat(latest[3]) || 400;
-        realData.solar_wind =
-          Math.min(1, Math.max(0, (speed - 250) / 750));
-        loaded++;
-        sources.solar_wind = true;
-      }
-    } catch {}
-
-    try {
-      const kpRes = await fetch(
-        proxy + encodeURIComponent(
-          'https://services.swpc.noaa.gov/products/geospace/planetary-k-index-1-minute.json'
-        )
-      );
-      if (kpRes.ok) {
-        const data = await kpRes.json();
-        const kp = parseFloat(data[data.length - 1]?.[1]) || 0;
-        realData.magnetic = Math.min(1, kp / 9);
-        loaded++;
-        sources.magnetic = true;
-      }
-    } catch {}
-
-    Object.keys(realData).forEach(k => {
-      if (k === 'chaos') return;
-      dataHistory[k].push(realData[k]);
-      if (dataHistory[k].length > 80) dataHistory[k].shift();
-    });
-
-    let vars = [];
-    Object.keys(dataHistory).forEach(k => {
-      if (k === 'chaos') return;
-      const h = dataHistory[k];
-      if (h.length < 2) return;
-      const mean = h.reduce((a, b) => a + b, 0) / h.length;
-      const v = Math.sqrt(
-        h.reduce((a, b) => a + (b - mean) ** 2, 0) / h.length
-      );
-      vars.push(v);
-    });
-
-    realData.chaos = vars.length
-      ? Math.min(1, vars.reduce((a, b) => a + b, 0) / vars.length * 10)
-      : 0.5;
-
-    let html = '';
-    Object.keys(realData).forEach(k => {
-      let cls = 'fallback';
-      if (sources[k]) cls = 'real';
-      html += `${k.padEnd(20,' ')} <span class="${cls}">${realData[k].toFixed(3)}</span><br>`;
-    });
-    dataDiv.innerHTML = html;
-    statusDiv.textContent = loaded ? 'оновлено' : '';
-
-  } catch (e) {
-    console.error(e);
-    statusDiv.textContent = '';
-  }
+    const oceanRes = await fetch(`https://marine-api.open-meteo.com/v1/marine?latitude=44.5&longitude=34.0&current=wave_height`);
+    if (oceanRes.ok) { const o=(await oceanRes.json()).current||{}; realData.ocean=Math.min(1,(o.wave_height||0)/8); loaded++; sources.ocean=true; }
+    const eqRes = await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson');
+    if (eqRes.ok) { const eq=await eqRes.json(); const feats=eq.features||[]; const count=feats.length; const maxMag=feats.reduce((m,f)=>Math.max(m,f.properties?.mag||0),0); realData.seismic=Math.min(1,(count/30)+(maxMag/10)*0.5); loaded++; sources.seismic=true; }
+    const proxy='https://corsproxy.io/?';
+    try { const solarRes=await fetch(proxy+encodeURIComponent('https://services.swpc.noaa.gov/products/solar-wind/plasma-7-day.json')); if(solarRes.ok){ const data=await solarRes.json(); const latest=data[data.length-1]||[]; const speed=parseFloat(latest[3])||400; realData.solar_wind=Math.min(1,Math.max(0,(speed-250)/750)); loaded++; sources.solar_wind=true; } } catch{}
+    try { const kpRes=await fetch(proxy+encodeURIComponent('https://services.swpc.noaa.gov/products/geospace/planetary-k-index-1-minute.json')); if(kpRes.ok){ const data=await kpRes.json(); const latestKp=parseFloat(data[data.length-1]?.[1])||0; realData.magnetic=Math.min(1,latestKp/9); loaded++; sources.magnetic=true; } } catch{}
+    Object.keys(realData).forEach(k=>{ if(k!=='chaos'){ dataHistory[k].push(realData[k]); if(dataHistory[k].length>80)dataHistory[k].shift(); } });
+    let vars=[]; Object.keys(dataHistory).forEach(k=>{ if(k==='chaos')return; const h=dataHistory[k]; if(h.length<2)return; const mean=h.reduce((a,b)=>a+b,0)/h.length; const varnce=h.reduce((a,b)=>a+(b-mean)**2,0)/h.length; vars.push(Math.sqrt(varnce)); });
+    realData.chaos = vars.length ? Math.min(1, vars.reduce((a,b)=>a+b,0)/vars.length*10):0.5;
+    blobs.forEach(b=>{ const v=realData[b.param]||0.5; b.targetSize=4+v*14; b.targetAlpha=0.3+v*0.6; b.targetDist=70+v*80; });
+    let html=''; Object.keys(realData).forEach(k=>{ let cls='fallback'; if(sources[k]===true)cls='real'; else if(k!=='chaos')cls='warning'; html+=`${k.padEnd(20,' ')} <span class="${cls}">${realData[k].toFixed(3)}</span><br>`; });
+    dataDiv.innerHTML=html; statusDiv.innerHTML=loaded>0?'оновлено':'';
+  } catch(e){ console.error(e); statusDiv.innerHTML=''; }
 }
 fetchRealPlanetData();
-setInterval(fetchRealPlanetData, 120000);
+setInterval(fetchRealPlanetData,120000);
 
-/* ===== FORMULAS ===== */
-const formulas = [
-  "E=mc²",
-  "F=ma",
-  "∇·E=ρ/ε₀",
-  "∫F·dr=ΔK",
-  "a²+b²=c²"
-];
-const formulaObjs = formulas.map(f => ({
-  text: f,
-  x: Math.random() * innerWidth,
-  y: Math.random() * innerHeight,
-  phase: Math.random() * Math.PI * 2
-}));
+// --- Лівий графік ---
+function drawCoordinateSystem(){
+  const margin=40,width=200,height=canvas.height-80;
+  ctx.strokeStyle='#0af'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(margin,40); ctx.lineTo(margin,height+40); ctx.lineTo(width+margin,height+40); ctx.stroke();
+  ctx.fillStyle='#0af'; ctx.font='11px Courier New';
+  const keys=Object.keys(realData);
+  keys.forEach((k,i)=>{ const y=40+i*(height/(keys.length-1)); ctx.fillText(k,5,y+3); });
+  ctx.strokeStyle='rgba(0,255,150,0.6)'; ctx.fillStyle='rgba(0,255,150,0.8)'; ctx.lineWidth=1.2;
+  let prev=null;
+  keys.forEach((k,i)=>{
+    const x=margin+realData[k]*width;
+    const y=40+i*(height/(keys.length-1));
+    ctx.beginPath(); ctx.arc(x,y,5,0,2*Math.PI); ctx.fill();
+    if(prev){ ctx.beginPath(); ctx.moveTo(prev.x,prev.y); ctx.lineTo(x,y); ctx.stroke(); }
+    prev={x:x,y:y};
+  });
+}
 
-/* ===== MAIN LOOP ===== */
-let t = 0;
-function loop() {
-  t += 0.016;
-  ctx.fillStyle = 'rgba(0,0,0,0.08)';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+// --- Формули для фону ---
+const formulas = ["E=mc^2","F=ma","∇·E=ρ/ε₀","∫F·dr=ΔK","a^2+b^2=c^2"];
+const formulaObjs = formulas.map(f=>({text:f,x:Math.random()*window.innerWidth,y:Math.random()*window.innerHeight,alpha:0,phase:Math.random()*Math.PI*2}));
 
-  const cx = canvas.width / 2;
-  const cy = canvas.height / 2;
-  const chaos = realData.chaos;
+// --- Основна анімація ---
+let t=0;
+function loop(){
+  t+=0.016;
+  ctx.fillStyle='rgba(0,0,0,0.08)'; ctx.fillRect(0,0,canvas.width,canvas.height);
+  const chaos=realData.chaos, cx=canvas.width/2, cy=canvas.height/2;
 
-  stars.forEach(s => {
-    const tw = Math.sin(t * s.twinkle * 12 + s.x * 0.008) * 0.18;
-    ctx.fillStyle = `rgba(220,235,255,${s.baseAlpha + tw})`;
-    ctx.fillRect(s.x, s.y, s.size, s.size);
+  // Зірки
+  const starMod=1-chaos*0.35;
+  stars.forEach(s=>{
+    const tw=Math.sin(t*s.twinkle*12 + s.x*0.008)*0.18*starMod;
+    ctx.fillStyle=`rgba(220,235,255,${Math.max(0.08,s.baseAlpha+tw).toFixed(3)})`;
+    ctx.fillRect(s.x,s.y,s.size,s.size);
   });
 
-  for (let i = 0; i < 8; i++) {
-    const angle = t * 0.2 + i;
-    const r = 120 + 60 * Math.sin(t * 0.3 + i) + realData.seismic * 30;
-    const sides = 3 + i + Math.floor(chaos * 5);
+  // Багатошарові полігони
+  const shapes=8;
+  for(let i=0;i<shapes;i++){
+    const angle=t*0.2+i*Math.PI*0.5;
+    const r=120+60*Math.sin(t*0.3+i)+realData.seismic*30;
+    const sides=3+i+Math.floor(realData.chaos*5);
     ctx.beginPath();
-    for (let s = 0; s < sides; s++) {
-      const a = (Math.PI * 2 / sides) * s + angle;
-      const x = cx + Math.cos(a) * r;
-      const y = cy + Math.sin(a) * r;
-      s === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    for(let s=0;s<sides;s++){
+      const a=(Math.PI*2/sides)*s+angle;
+      const x=cx+Math.cos(a)*r*(0.8+0.4*Math.sin(t+i));
+      const y=cy+Math.sin(a)*r*(0.8+0.4*Math.cos(t+i));
+      s===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
     }
     ctx.closePath();
-    ctx.strokeStyle = `rgba(${50+i*30},${120+i*20},${220-i*20},${0.08+chaos*0.2})`;
-    ctx.lineWidth = 1.2 + realData.magnetic * 2;
+    ctx.strokeStyle=`rgba(${50+i*30},${100+i*20},${200-i*20},${0.08+realData.chaos*0.2})`;
+    ctx.lineWidth=1.2+realData.magnetic*2;
     ctx.stroke();
   }
 
+  // Спіралі
+  const spiralPoints=180;
   ctx.beginPath();
-  for (let i = 0; i < 180; i++) {
-    const a = i * 0.2 + t * 0.6;
-    const r = i * 0.8 + realData.solar_radiation * 20;
-    const x = cx + Math.cos(a) * r;
-    const y = cy + Math.sin(a) * r;
-    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  for(let i=0;i<spiralPoints;i++){
+    const angle=i*0.2+t*0.6;
+    const radius=i*0.8+50*Math.sin(t*0.5+i*0.3)+realData.solar_radiation*20;
+    const x=cx+Math.cos(angle)*radius;
+    const y=cy+Math.sin(angle)*radius;
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
   }
-  ctx.strokeStyle = `rgba(255,180,80,${0.05 + realData.solar_wind * 0.15})`;
-  ctx.stroke();
+  ctx.strokeStyle=`rgba(255,180,80,${0.05+realData.solar_wind*0.15})`; ctx.lineWidth=1.5; ctx.stroke();
 
-  formulaObjs.forEach(f => {
-    const a = Math.sin(t * 0.5 + f.phase) * 0.5 + 0.5;
-    ctx.fillStyle = `rgba(180,255,200,${a * 0.25})`;
-    ctx.font = '16px Courier New';
-    ctx.fillText(
-      f.text,
-      f.x + Math.sin(t + f.phase) * 20,
-      f.y + Math.cos(t + f.phase) * 15
-    );
+  // Формули на фоні
+  formulaObjs.forEach(f=>{
+    f.alpha=Math.sin(t*0.5+f.phase)*0.5+0.5;
+    ctx.fillStyle=`rgba(180,255,200,${f.alpha*0.25})`;
+    ctx.font='16px Courier New';
+    ctx.fillText(f.text,f.x+Math.sin(t+f.phase)*20,f.y+Math.cos(t+f.phase)*15);
   });
+
+  // Лівий графік
+  drawCoordinateSystem();
 
   requestAnimationFrame(loop);
 }
 loop();
 </script>
+</body>
+</html>
