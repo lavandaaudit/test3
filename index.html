@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
-<title>GEOMETRIC CHAOS · PHYSICAL DATA SYSTEM</title>
+<title>GEOMETRIC CHAOS · PHYSICAL DATA MONITOR</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -16,37 +16,74 @@ html,body{
   font-family:"Courier New",monospace;
   color:#9fe7ff;
 }
+
+/* ===== layout ===== */
 canvas{
   position:fixed;
   inset:0;
+  z-index:0;
 }
-#hud{
+
+#panel{
   position:fixed;
-  top:10px;
-  left:10px;
-  font-size:11px;
-  line-height:1.4;
-  opacity:0.75;
+  top:0;
+  left:0;
+  width:260px;
+  height:100%;
+  background:rgba(0,0,0,0.55);
+  border-right:1px solid rgba(120,180,255,0.15);
+  padding:12px;
+  box-sizing:border-box;
+  z-index:2;
 }
+
+#panel h1{
+  font-size:13px;
+  margin:0 0 8px 0;
+  font-weight:normal;
+  letter-spacing:1px;
+}
+
+#data{
+  font-size:11px;
+  line-height:1.45;
+  white-space:pre;
+  margin-bottom:12px;
+}
+
+#graph{
+  width:100%;
+  height:160px;
+  border:1px solid rgba(120,180,255,0.15);
+}
+
 #info{
   position:fixed;
   bottom:8px;
-  width:100%;
-  text-align:center;
+  left:50%;
+  transform:translateX(-50%);
   font-size:10px;
   opacity:0.35;
+  text-align:center;
+  max-width:90%;
+  z-index:2;
 }
 </style>
 </head>
 
 <body>
+
 <canvas id="c"></canvas>
 
-<div id="hud"></div>
+<div id="panel">
+  <h1>PHYSICAL DATA</h1>
+  <div id="data"></div>
+  <canvas id="graph"></canvas>
+</div>
 
 <div id="info">
 фізико-геометрична система. симуляція реальних та модельованих даних.
-геометрія реагує на магнітні, атмосферні, океанічні, сейсмічні та сонячні параметри.
+геометрія є відображенням стану фізичних процесів.
 </div>
 
 <script>
@@ -64,46 +101,74 @@ function resize(){
 addEventListener("resize",resize);
 resize();
 
+/* ===================== GRAPH ===================== */
+const gCanvas=document.getElementById("graph");
+const gCtx=gCanvas.getContext("2d");
+gCanvas.width=236;
+gCanvas.height=160;
+
 /* ===================== TIME ===================== */
 let t=0;
 
 /* ===================== DATA ===================== */
 const data={
-  seismic:0.3,
-  magnetic:0.4,
-  atmosphere_wind:0.5,
-  atmosphere_pressure:0.6,
-  atmosphere_temp:0.5,
-  ocean:0.4,
-  solar_radiation:0.5,
-  solar_wind:0.4,
-  precipitation:0.3,
+  seismic:0.30,
+  magnetic:0.40,
+  atmosphere_wind:0.50,
+  atmosphere_pressure:0.60,
+  atmosphere_temp:0.50,
+  ocean:0.40,
+  solar_radiation:0.50,
+  solar_wind:0.40,
+  precipitation:0.30,
   chaos:0.35
 };
 
-/* ===================== DATA DRIFT ===================== */
+/* ===================== DATA HISTORY ===================== */
+const history=[];
+const HISTORY_LEN=200;
+
+/* ===================== DATA UPDATE ===================== */
 function updateData(){
   for(const k in data){
-    data[k]+= (Math.random()-0.5)*0.008;
+    data[k]+= (Math.random()-0.5)*0.01;
     data[k]=Math.max(0,Math.min(1,data[k]));
   }
+  history.push(data.chaos);
+  if(history.length>HISTORY_LEN) history.shift();
 }
 
-/* ===================== HUD ===================== */
-const hud=document.getElementById("hud");
-function drawHUD(){
-  hud.innerHTML=Object.entries(data)
-    .map(([k,v])=>`${k.padEnd(22," ")} ${v.toFixed(2)}`)
-    .join("<br>");
+/* ===================== PANEL ===================== */
+const dataDiv=document.getElementById("data");
+function drawPanel(){
+  let out="";
+  for(const k in data){
+    out+=k.padEnd(22," ")+" "+data[k].toFixed(2)+"\n";
+  }
+  dataDiv.textContent=out;
+}
+
+/* ===================== GRAPH DRAW ===================== */
+function drawGraph(){
+  gCtx.clearRect(0,0,gCanvas.width,gCanvas.height);
+  gCtx.strokeStyle="rgba(120,200,255,0.6)";
+  gCtx.beginPath();
+  history.forEach((v,i)=>{
+    const x=i/HISTORY_LEN*gCanvas.width;
+    const y=gCanvas.height-(v*gCanvas.height);
+    if(i===0) gCtx.moveTo(x,y);
+    else gCtx.lineTo(x,y);
+  });
+  gCtx.stroke();
 }
 
 /* ===================== STARS ===================== */
 const stars=[];
-for(let i=0;i<400;i++){
+for(let i=0;i<500;i++){
   stars.push({
     x:Math.random()*w,
     y:Math.random()*h,
-    s:Math.random()*1.5+0.2,
+    s:Math.random()*1.5+0.3,
     p:Math.random()*Math.PI*2
   });
 }
@@ -112,74 +177,79 @@ for(let i=0;i<400;i++){
 let ax=0.1, ay=0, az=0;
 function stepAttractor(){
   const sigma=10+data.magnetic*10;
-  const rho=28+data.chaos*20;
+  const rho=28+data.chaos*25;
   const beta=2.66;
 
   const dx=sigma*(ay-ax);
   const dy=ax*(rho-az)-ay;
   const dz=ax*ay-beta*az;
 
-  ax+=dx*0.004;
-  ay+=dy*0.004;
-  az+=dz*0.004;
+  ax+=dx*0.003;
+  ay+=dy*0.003;
+  az+=dz*0.003;
 }
 
 /* ===================== DRAW ===================== */
 function loop(){
   updateData();
-  drawHUD();
+  drawPanel();
+  drawGraph();
 
-  t+=0.01 + data.atmosphere_temp*0.01;
+  t+=0.01 + data.atmosphere_temp*0.015;
 
-  ctx.fillStyle="rgba(0,0,0,0.18)";
+  ctx.fillStyle="rgba(0,0,0,0.22)";
   ctx.fillRect(0,0,w,h);
 
-  /* ---- stars field ---- */
+  /* ---- star field ---- */
   stars.forEach(s=>{
     const n=Math.sin(t+s.p)*data.atmosphere_wind*2;
-    ctx.fillStyle=`rgba(180,220,255,${0.15+data.solar_radiation*0.3})`;
+    ctx.fillStyle=`rgba(180,220,255,${0.12+data.solar_radiation*0.3})`;
     ctx.fillRect(s.x+n,s.y+n,s.s,s.s);
   });
 
-  /* ---- central geometry (СТАРИЙ СТИЛЬ) ---- */
-  for(let i=0;i<7;i++){
-    const sides=3+i+Math.floor(data.magnetic*4);
-    const base=110+i*40;
+  /* ---- GEOMETRIC CORE : 10 FIGURES ---- */
+  for(let i=0;i<10;i++){
+    const sides=3+i;
+    const base=80+i*45;
     ctx.beginPath();
     for(let j=0;j<=sides;j++){
       const a=j/sides*Math.PI*2;
-      const noise=
+      const mod=
         Math.sin(
-          t*0.8 +
-          j*0.7 +
-          i*1.3
+          t*0.6 +
+          i*1.1 +
+          j*0.9
         )*
-        (40*data.seismic + 60*data.ocean + 30*data.chaos);
+        (40*data.seismic +
+         50*data.ocean +
+         60*data.chaos);
 
-      const r=base+noise;
-      const x=cx+Math.cos(a+t*0.1)*r;
-      const y=cy+Math.sin(a+t*0.1)*r;
+      const r=base+mod;
+      const x=cx+Math.cos(a+t*0.15)*r;
+      const y=cy+Math.sin(a+t*0.15)*r;
+
       if(j===0) ctx.moveTo(x,y);
       else ctx.lineTo(x,y);
     }
+
     ctx.strokeStyle=`rgba(
-      ${160+data.solar_radiation*80},
-      ${180+data.atmosphere_temp*60},
+      ${140+data.solar_radiation*100},
+      ${160+data.atmosphere_temp*80},
       255,
-      ${0.04+data.solar_wind*0.15}
+      ${0.03+i*0.01+data.solar_wind*0.15}
     )`;
-    ctx.lineWidth=0.6+data.atmosphere_pressure;
+    ctx.lineWidth=0.6+data.atmosphere_pressure*1.2;
     ctx.stroke();
   }
 
-  /* ---- attractor overlay (НЕ ЛАМАЄ) ---- */
+  /* ---- ATTRACTOR OVERLAY ---- */
   stepAttractor();
   ctx.save();
   ctx.translate(cx,cy);
   ctx.beginPath();
-  ctx.strokeStyle=`rgba(255,120,200,${0.12+data.chaos*0.3})`;
+  ctx.strokeStyle=`rgba(255,120,200,${0.12+data.chaos*0.35})`;
   ctx.lineWidth=1;
-  ctx.lineTo(ax*9,ay*9);
+  ctx.lineTo(ax*8,ay*8);
   ctx.stroke();
   ctx.restore();
 
@@ -190,3 +260,4 @@ loop();
 </script>
 </body>
 </html>
+
