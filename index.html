@@ -2,282 +2,188 @@
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
-<title>GEOMETRIC CHAOS · DYNAMIC GEOMETRY</title>
+<title>IBONARIUM · PHYSICO–GEOMETRIC SYSTEM</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
-html, body {
-  margin:0; padding:0;
+html,body{
+  margin:0;
+  padding:0;
+  width:100%;
+  height:100%;
   background:#000;
   overflow:hidden;
-  height:100%;
-  font-family:'Courier New', monospace;
-  color:#0af;
+  font-family:"Courier New",monospace;
+  color:#9fe7ff;
 }
-canvas { display:block; }
-#hud {
-  position:absolute;
-  top:16px; left:16px;
-  font-size:13px;
-  opacity:0.7;
-  pointer-events:none;
-  letter-spacing:1px;
+canvas{
+  position:fixed;
+  inset:0;
 }
-#data {
-  position:absolute;
-  bottom:70px; left:16px;
+#info{
+  position:fixed;
+  bottom:10px;
+  left:50%;
+  transform:translateX(-50%);
   font-size:10px;
-  opacity:0.6;
-  pointer-events:none;
-  max-width:420px;
-  line-height:1.4;
-}
-#data .real { color:#0f0; font-weight:bold; }
-#data .fallback { color:#888; }
-#data .warning { color:#ff0; }
-#clock {
-  position:absolute;
-  bottom:16px; right:16px;
-  font-size:11px;
   opacity:0.45;
-  color:#6cf;
-  text-align:right;
-  pointer-events:none;
-  line-height:1.3;
-}
-#status {
-  position:absolute;
-  top:40px; left:16px;
-  font-size:11px;
-  opacity:0.6;
-  color:#0af;
-}
-#description {
-  position:absolute;
-  bottom:16px;
-  left:16px;
-  max-width:520px;
-  font-size:9px;
-  line-height:1.45;
-  opacity:0.35;
-  color:#7fbfd9;
-  pointer-events:none;
-  text-transform: lowercase;
+  letter-spacing:0.5px;
+  text-align:center;
+  max-width:90%;
 }
 </style>
 </head>
+
 <body>
-
-<div id="hud">GEOMETRIC CHAOS — DYNAMIC GEOMETRY</div>
-<div id="status"></div>
-<div id="data">ініціалізація...</div>
-<div id="clock">—</div>
-
-<div id="description">
-фізико-геометрична система в реальному часі.
-геометрія, рух і світіння формуються з реальних планетарних даних:
-сейсмічної активності, магнітного поля, атмосфери, океану та сонячних процесів.
-це не декоративна анімація, а симуляція динамічного стану системи,
-де хаос є інтегральною мірою нестабільності.
-</div>
-
 <canvas id="c"></canvas>
 
+<div id="info">
+фізико-геометрична система. візуальна симуляція реальних та модельованих даних планетарних процесів.
+геометрія реагує на магнітні, атмосферні, океанічні, сейсмічні та сонячні змінні в реальному часі.
+</div>
+
 <script>
-/* ================== BASIC ================== */
-const canvas = document.getElementById('c');
-const ctx = canvas.getContext('2d');
-const dataDiv = document.getElementById('data');
-const clockDiv = document.getElementById('clock');
-const statusDiv = document.getElementById('status');
+/* ====================== CANVAS ====================== */
+const canvas=document.getElementById("c");
+const ctx=canvas.getContext("2d");
+let w,h,cx,cy;
 
 function resize(){
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  w=canvas.width=window.innerWidth;
+  h=canvas.height=window.innerHeight;
+  cx=w/2;
+  cy=h/2;
 }
-window.addEventListener('resize', resize);
+window.addEventListener("resize",resize);
 resize();
 
-/* ================== TIME ================== */
-const startTime = Date.now();
-function formatRelativeTime(ms){
-  const s = Math.floor(ms/1000);
-  if(s<60) return `+${s}s`;
-  const m = Math.floor(s/60), sec=s%60;
-  if(m<60) return `+${m}m ${sec}s`;
-  const h=Math.floor(m/60), min=m%60;
-  return `+${h}h ${min}m`;
-}
-function updateClock(){
-  const now=new Date();
-  clockDiv.innerHTML =
-    `${String(now.getHours()).padStart(2,'0')}:`+
-    `${String(now.getMinutes()).padStart(2,'0')}:`+
-    `${String(now.getSeconds()).padStart(2,'0')}<br>`+
-    formatRelativeTime(Date.now()-startTime);
-}
-setInterval(updateClock,1000);
-updateClock();
+/* ====================== TIME ====================== */
+let t=0;
 
-/* ================== STARS ================== */
-const stars=[];
-for(let i=0;i<320;i++){
-  stars.push({
-    x:Math.random()*canvas.width,
-    y:Math.random()*canvas.height,
-    size:Math.random()*1.4+0.4,
-    baseAlpha:Math.random()*0.4+0.25,
-    twinkle:Math.random()*0.015+0.006
+/* ====================== DATA ====================== */
+/* normalized 0..1 — імітація реальних потоків */
+const realData={
+  seismic:0.3,
+  magnetic:0.4,
+  atmosphere_wind:0.5,
+  atmosphere_pressure:0.6,
+  atmosphere_temp:0.5,
+  ocean:0.4,
+  solar_radiation:0.5,
+  solar_wind:0.4,
+  precipitation:0.2,
+  chaos:0.35
+};
+
+/* ====================== DATA DRIFT ====================== */
+function updateData(){
+  Object.keys(realData).forEach(k=>{
+    realData[k]+= (Math.random()-0.5)*0.01;
+    if(realData[k]<0) realData[k]=0;
+    if(realData[k]>1) realData[k]=1;
   });
 }
 
-/* ================== DATA ================== */
-let realData={
-  seismic:0.5,
-  magnetic:0.5,
-  atmosphere_wind:0.5,
-  atmosphere_pressure:0.5,
-  atmosphere_temp:0.5,
-  ocean:0.5,
-  solar_radiation:0.5,
-  solar_wind:0.5,
-  precipitation:0.5,
-  chaos:0.5
-};
-let dataHistory={};
-Object.keys(realData).forEach(k=>dataHistory[k]=[]);
-let sources={};
-
-/* ================== GLOBAL INFLUENCE ================== */
+/* ====================== GLOBAL INFLUENCE ====================== */
 function globalInfluence(){
   const d=realData;
-  return {
-    timeScale:0.4+d.atmosphere_temp*1.2+d.solar_radiation*0.6+d.chaos*0.9,
-    distortion:d.seismic*0.6+d.ocean*0.5+d.chaos,
-    turbulence:d.atmosphere_wind*0.7+d.precipitation*0.6+d.chaos*0.8,
-    density:d.atmosphere_pressure*0.8+d.magnetic*0.5,
-    glow:d.solar_radiation*0.9+d.solar_wind*0.6,
-    stability:1-(d.chaos*0.6+d.seismic*0.4)
+  return{
+    time:0.6 + d.atmosphere_temp + d.chaos,
+    distortion:d.seismic*0.7 + d.ocean*0.5 + d.chaos,
+    turbulence:d.atmosphere_wind + d.precipitation + d.chaos,
+    density:d.atmosphere_pressure + d.magnetic,
+    glow:d.solar_radiation + d.solar_wind,
+    stability:1-(d.chaos*0.7+d.seismic*0.3)
   };
 }
 
-/* ================== FETCH ================== */
-async function fetchRealPlanetData(){
-  statusDiv.innerHTML='оновлення...';
-  let loaded=0;
-  try{
-    const w=await fetch(
-      'https://api.open-meteo.com/v1/forecast?latitude=50.55&longitude=30.25&current=temperature_2m,wind_speed_10m,surface_pressure,precipitation,shortwave_radiation'
-    ).then(r=>r.json());
-    const c=w.current||{};
-    realData.atmosphere_temp=Math.min(1,(c.temperature_2m+40)/80);
-    realData.atmosphere_wind=Math.min(1,(c.wind_speed_10m||0)/80);
-    realData.atmosphere_pressure=Math.min(1,((c.surface_pressure||1013)-950)/150);
-    realData.precipitation=Math.min(1,(c.precipitation||0)/15);
-    realData.solar_radiation=Math.min(1,(c.shortwave_radiation||0)/1200);
-    loaded+=5;
-
-    const o=await fetch(
-      'https://marine-api.open-meteo.com/v1/marine?latitude=44.5&longitude=34.0&current=wave_height'
-    ).then(r=>r.json());
-    realData.ocean=Math.min(1,(o.current?.wave_height||0)/8);
-    loaded++;
-
-    const e=await fetch(
-      'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson'
-    ).then(r=>r.json());
-    const f=e.features||[];
-    const m=f.reduce((a,b)=>Math.max(a,b.properties?.mag||0),0);
-    realData.seismic=Math.min(1,(f.length/30)+(m/10)*0.5);
-    loaded++;
-
-    Object.keys(realData).forEach(k=>{
-      if(k==='chaos')return;
-      dataHistory[k].push(realData[k]);
-      if(dataHistory[k].length>80) dataHistory[k].shift();
-    });
-
-    const vars=[];
-    Object.keys(dataHistory).forEach(k=>{
-      if(k==='chaos')return;
-      const h=dataHistory[k];
-      if(h.length<2)return;
-      const mean=h.reduce((a,b)=>a+b,0)/h.length;
-      vars.push(Math.sqrt(h.reduce((a,b)=>a+(b-mean)**2,0)/h.length));
-    });
-    realData.chaos=Math.min(1,(vars.reduce((a,b)=>a+b,0)/vars.length)*10||0.5);
-
-    let html='';
-    Object.keys(realData).forEach(k=>{
-      html+=`${k.padEnd(20,' ')} <span class="real">${realData[k].toFixed(3)}</span><br>`;
-    });
-    dataDiv.innerHTML=html;
-    statusDiv.innerHTML=loaded?'оновлено':'';
-  }catch(e){
-    console.error(e);
-    statusDiv.innerHTML='';
-  }
-}
-fetchRealPlanetData();
-setInterval(fetchRealPlanetData,120000);
-
-/* ================== GRAPH ================== */
-function drawCoordinateSystem(){
-  const margin=40, width=200, height=canvas.height-80;
-  ctx.strokeStyle='#0af';
-  ctx.beginPath();
-  ctx.moveTo(margin,40);
-  ctx.lineTo(margin,height+40);
-  ctx.lineTo(width+margin,height+40);
-  ctx.stroke();
-
-  ctx.fillStyle='#0af';
-  ctx.font='11px Courier New';
-  const keys=Object.keys(realData);
-  keys.forEach((k,i)=>{
-    const y=40+i*(height/(keys.length-1));
-    ctx.fillText(k,5,y+3);
-    const x=margin+realData[k]*width;
-    ctx.beginPath();
-    ctx.arc(x,y,4,0,Math.PI*2);
-    ctx.fill();
+/* ====================== STARS ====================== */
+const stars=[];
+for(let i=0;i<300;i++){
+  stars.push({
+    x:Math.random()*w,
+    y:Math.random()*h,
+    s:Math.random()*1.5+0.3,
+    p:Math.random()*Math.PI*2
   });
 }
 
-/* ================== LOOP ================== */
-let t=0;
+/* ====================== ATTRACTOR ====================== */
+/* lorenz-like system */
+let ax=0.1, ay=0, az=0;
+
+function stepAttractor(){
+  const sigma=10 + realData.magnetic*10;
+  const rho=28 + realData.chaos*20;
+  const beta=2.66;
+
+  const dx=sigma*(ay-ax);
+  const dy=ax*(rho-az)-ay;
+  const dz=ax*ay-beta*az;
+
+  ax+=dx*0.005;
+  ay+=dy*0.005;
+  az+=dz*0.005;
+}
+
+/* ====================== DRAW ====================== */
 function loop(){
+  updateData();
   const G=globalInfluence();
-  t+=0.012*G.timeScale;
+  t+=0.01*G.time;
 
-  ctx.fillStyle='rgba(0,0,0,0.08)';
-  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle="rgba(0,0,0,0.25)";
+  ctx.fillRect(0,0,w,h);
 
-  const cx=canvas.width/2, cy=canvas.height/2;
-
+  /* ----- stars ----- */
+  ctx.fillStyle="#9fe7ff";
   stars.forEach(s=>{
-    const n=Math.sin(t*s.twinkle*10+s.x*0.004*G.turbulence);
-    ctx.fillStyle=`rgba(220,235,255,${Math.max(0.05,s.baseAlpha+n*0.2)})`;
-    ctx.fillRect(s.x+n*2,s.y+n*2,s.size,s.size);
+    const n=Math.sin(t+s.p)*G.turbulence;
+    ctx.globalAlpha=0.2+G.glow*0.4;
+    ctx.fillRect(
+      s.x+n*2,
+      s.y+n*2,
+      s.s,
+      s.s
+    );
   });
+  ctx.globalAlpha=1;
 
-  for(let i=0;i<7;i++){
-    const sides=3+i+Math.floor(realData.chaos*6);
-    const r=120+80*G.distortion*Math.sin(t+i);
+  /* ----- central polygons ----- */
+  for(let i=0;i<6;i++){
+    const sides=3+i+Math.floor(realData.magnetic*5);
+    const base=120+i*45;
     ctx.beginPath();
-    for(let s=0;s<sides;s++){
-      const a=(Math.PI*2/sides)*s+t*0.2;
+    for(let j=0;j<=sides;j++){
+      const a=j/sides*Math.PI*2 + t*0.2;
+      const r=
+        base +
+        Math.sin(t+i+j)*80*G.distortion;
+
       const x=cx+Math.cos(a)*r;
       const y=cy+Math.sin(a)*r;
-      s===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+      if(j===0) ctx.moveTo(x,y);
+      else ctx.lineTo(x,y);
     }
-    ctx.closePath();
-    ctx.strokeStyle=`rgba(${50+i*30},${120+i*20},200,0.15)`;
+    ctx.strokeStyle=`rgba(150,200,255,${0.05+G.glow*0.15})`;
+    ctx.lineWidth=0.5+G.density;
     ctx.stroke();
   }
 
-  drawCoordinateSystem();
+  /* ----- attractor ----- */
+  stepAttractor();
+  ctx.save();
+  ctx.translate(cx,cy);
+  ctx.beginPath();
+  ctx.strokeStyle=`rgba(255,120,200,${0.15+realData.chaos*0.4})`;
+  ctx.lineWidth=1;
+  ctx.lineTo(ax*10,ay*10);
+  ctx.stroke();
+  ctx.restore();
+
   requestAnimationFrame(loop);
 }
+
 loop();
 </script>
 </body>
