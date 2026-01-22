@@ -2,19 +2,45 @@
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
-<title>GEOMETRIC CHAOS · STELLAR STREAM</title>
+<title>GEOMETRIC CHAOS · DATA STREAM</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-html, body{
+html,body{
   margin:0; padding:0;
   width:100%; height:100%;
-  background:#000; overflow:hidden;
+  background:#000;
+  overflow:hidden;
   font-family:"Courier New", monospace;
+  color:#9fe7ff;
 }
 canvas{ display:block; position:fixed; inset:0; z-index:0;}
+#dataPanel{
+  position:fixed;
+  bottom:0;
+  left:50%;
+  transform:translateX(-50%);
+  width:95%;
+  max-width:800px;
+  height:auto;
+  background:rgba(0,0,0,0.5);
+  color:#0f0;
+  font-size:11px;
+  padding:6px 10px;
+  border-radius:6px;
+  line-height:1.2;
+  z-index:2;
+  white-space:pre;
+}
 #info{
-  position:fixed; bottom:8px; left:50%; transform:translateX(-50%);
-  font-size:10px; opacity:0.35; text-align:center; max-width:90%; z-index:2;
+  position:fixed;
+  bottom:50px;
+  left:50%;
+  transform:translateX(-50%);
+  font-size:10px;
+  opacity:0.35;
+  text-align:center;
+  max-width:90%;
+  z-index:2;
   color:#9fe7ff;
 }
 </style>
@@ -23,16 +49,17 @@ canvas{ display:block; position:fixed; inset:0; z-index:0;}
 
 <canvas id="c"></canvas>
 
+<div id="dataPanel">ініціалізація...</div>
 <div id="info">
-фізико-геометрична система. симуляція реальних даних. кожен показник = окремий потік. зірки на фоні.
+фізико-геометрична система. симуляція реальних та модельованих даних. кожен показник — окремий потік.
 </div>
 
 <script>
 /* ===================== CANVAS ===================== */
 const canvas=document.getElementById("c");
 const ctx=canvas.getContext("2d");
-let w,h,cx,cy;
-function resize(){ w=canvas.width=innerWidth; h=canvas.height=innerHeight; cx=w/2; cy=h/2;}
+let w,h;
+function resize(){ w=canvas.width=innerWidth; h=canvas.height=innerHeight; }
 window.addEventListener("resize",resize);
 resize();
 
@@ -51,8 +78,7 @@ for(let i=0;i<400;i++){
 /* ===================== DATA ===================== */
 const dataKeys = [
   "seismic","magnetic","atmosphere_wind","atmosphere_pressure","atmosphere_temp",
-  "ocean","solar_radiation","solar_wind","precipitation","chaos",
-  "solar_kp","solar_flux"
+  "ocean","solar_radiation","solar_wind","precipitation","chaos"
 ];
 const data={};
 const history={};
@@ -64,24 +90,34 @@ const colors=[
   "rgba(255,80,80,0.8)","rgba(80,180,255,0.8)","rgba(80,255,160,0.8)",
   "rgba(255,180,60,0.8)","rgba(255,100,200,0.8)","rgba(100,200,255,0.8)",
   "rgba(255,240,100,0.8)","rgba(200,120,255,0.8)","rgba(100,220,255,0.8)",
-  "rgba(255,255,255,0.8)","rgba(120,255,255,0.8)","rgba(255,180,255,0.8)"
+  "rgba(255,255,255,0.8)"
 ];
 
-/* ===================== DATA UPDATE ===================== */
+/* ===================== DATA PANEL ===================== */
+const dataPanel = document.getElementById("dataPanel");
+function updatePanel(){
+  let out="";
+  dataKeys.forEach(k=>{
+    out += k.padEnd(20," ") + data[k].toFixed(3) + "\n";
+  });
+  dataPanel.textContent = out;
+}
+
+/* ===================== DATA FETCH ===================== */
 async function fetchData(){
   try{
     // Атмосфера
     const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=50.55&longitude=30.25&current_weather=true&hourly=temperature_2m,wind_speed_10m,surface_pressure,precipitation,shortwave_radiation`);
-    const w=await weatherRes.json();
+    const w = await weatherRes.json();
     const cw=w.current_weather||{};
-    data.atmosphere_temp=Math.min(1, Math.max(0, (cw.temperature_2m+40)/80));
+    data.atmosphere_temp=Math.min(1, Math.max(0,(cw.temperature_2m+40)/80));
     data.atmosphere_wind=Math.min(1,(cw.wind_speed_10m||0)/80);
     data.atmosphere_pressure=Math.min(1,(cw.surface_pressure-950)/150);
     data.precipitation=Math.min(1,(cw.precipitation||0)/15);
     data.solar_radiation=Math.min(1,(cw.shortwave_radiation||0)/1200);
 
     // Океан
-    const oceanRes=await fetch(`https://marine-api.open-meteo.com/v1/marine?latitude=44.5&longitude=34.0&current=wave_height`);
+    const oceanRes = await fetch(`https://marine-api.open-meteo.com/v1/marine?latitude=44.5&longitude=34.0&current=wave_height`);
     const o=await oceanRes.json();
     data.ocean=Math.min(1,(o.current?.wave_height||0)/8);
 
@@ -98,7 +134,6 @@ async function fetchData(){
       const kpData=await kpRes.json();
       const latestKp=parseFloat(kpData[kpData.length-1]?.[1])||0;
       data.magnetic=Math.min(1,latestKp/9);
-      data.solar_kp=Math.min(1,latestKp/9);
     }catch{}
 
     // Сонячний вітер
@@ -109,10 +144,9 @@ async function fetchData(){
       const latest=sdata[sdata.length-1]||[];
       const speed=parseFloat(latest[3])||400;
       data.solar_wind=Math.min(1,(speed-250)/750);
-      data.solar_flux=Math.min(1,(speed-250)/750);
     }catch{}
 
-    // Хаос
+    // Хаос (варіація)
     let vars=[];
     Object.keys(history).forEach(k=>{
       if(k==='chaos') return;
@@ -122,7 +156,7 @@ async function fetchData(){
       const varc=h.reduce((a,b)=>a+(b-mean)**2,0)/h.length;
       vars.push(Math.sqrt(varc));
     });
-    data.chaos = vars.length ? Math.min(1, vars.reduce((a,b)=>a+b,0)/vars.length*10) : 0.5;
+    data.chaos = vars.length ? Math.min(1,vars.reduce((a,b)=>a+b,0)/vars.length*10) : 0.5;
 
     // оновлення історії
     Object.keys(history).forEach(k=>{
@@ -134,38 +168,35 @@ async function fetchData(){
 fetchData();
 setInterval(fetchData,120000);
 
-/* ===================== DRAW ===================== */
-let t=0;
+/* ===================== LOOP ===================== */
 function loop(){
-  t+=0.016;
-
   // фон
-  ctx.fillStyle="rgba(0,0,0,0.15)";
+  ctx.fillStyle="rgba(0,0,0,0.12)";
   ctx.fillRect(0,0,w,h);
 
   // зірки
   stars.forEach(s=>{
-    const tw=Math.sin(t*12*s.twinkle + s.x*0.01)*0.2;
+    const tw=Math.sin(Date.now()*0.002*s.twinkle + s.x*0.01)*0.2;
     ctx.fillStyle=`rgba(255,255,255,${Math.max(0.05,s.baseAlpha+tw)})`;
     ctx.fillRect(s.x,s.y,s.size,s.size);
   });
 
   // потоки даних
-  const keys=Object.keys(history);
-  keys.forEach((k,i)=>{
+  dataKeys.forEach((k,i)=>{
     const hData=history[k];
     ctx.beginPath();
     ctx.strokeStyle=colors[i%colors.length];
     ctx.lineWidth=1.5;
     hData.forEach((v,j)=>{
-      const x = j/HISTORY_LEN*w;
-      const y = h*0.1 + i*(h*0.07) + (v*0.05*h); // верхня частина
+      const x=j/HISTORY_LEN*w;
+      const y=50 + i*(h*0.07) + (v*0.05*h);
       if(j===0) ctx.moveTo(x,y);
       else ctx.lineTo(x,y);
     });
     ctx.stroke();
   });
 
+  updatePanel();
   requestAnimationFrame(loop);
 }
 loop();
