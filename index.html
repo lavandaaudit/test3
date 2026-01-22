@@ -2,27 +2,20 @@
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
-<title>GEOMETRIC CHAOS · FUTURISTIC DATA</title>
+<title>GEOMETRIC CHAOS · DATA STREAM</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <style>
-html,body{
+html, body {
   margin:0;
   padding:0;
   width:100%;
   height:100%;
   background:#000;
   overflow:hidden;
-  font-family:"Courier New",monospace;
+  font-family:"Courier New", monospace;
   color:#9fe7ff;
 }
-
-canvas{
-  position:fixed;
-  inset:0;
-  z-index:0;
-}
-
+canvas { display:block; position:fixed; inset:0; z-index:0; }
 #panel{
   position:fixed;
   top:0;
@@ -35,14 +28,12 @@ canvas{
   box-sizing:border-box;
   z-index:2;
 }
-
 #panel h1{
   font-size:13px;
   margin:0 0 8px 0;
   font-weight:normal;
   letter-spacing:1px;
 }
-
 #data{
   font-size:11px;
   line-height:1.4;
@@ -51,13 +42,6 @@ canvas{
   max-height:180px;
   overflow-y:auto;
 }
-
-#graph{
-  width:100%;
-  height:160px;
-  border:1px solid rgba(0,200,255,0.2);
-}
-
 #info{
   position:fixed;
   bottom:8px;
@@ -76,42 +60,25 @@ canvas{
 <canvas id="c"></canvas>
 
 <div id="panel">
-  <h1>PHYSICAL DATA</h1>
+  <h1>PHYSICAL DATA STREAM</h1>
   <div id="data"></div>
-  <canvas id="graph"></canvas>
 </div>
 
 <div id="info">
-фізико-геометрична система. симуляція реальних та модельованих даних. 
-кожен показник відповідає окремій фігурі.
+фізико-геометрична система. симуляція реальних та модельованих даних. кожен показник — окремий потік.
 </div>
 
 <script>
 /* ===================== CANVAS ===================== */
-const canvas=document.getElementById("c");
-const ctx=canvas.getContext("2d");
-let w,h,cx,cy;
-
-function resize(){
-  w=canvas.width=innerWidth;
-  h=canvas.height=innerHeight;
-  cx=w/2;
-  cy=h/2;
-}
-addEventListener("resize",resize);
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
+let w, h;
+function resize(){ w=canvas.width=innerWidth; h=canvas.height=innerHeight; }
+window.addEventListener("resize", resize);
 resize();
 
-/* ===================== GRAPH ===================== */
-const gCanvas=document.getElementById("graph");
-const gCtx=gCanvas.getContext("2d");
-gCanvas.width=236;
-gCanvas.height=160;
-
-/* ===================== TIME ===================== */
-let t=0;
-
 /* ===================== DATA ===================== */
-const data={
+const data = {
   seismic:0.3,
   magnetic:0.4,
   atmosphere_wind:0.5,
@@ -125,135 +92,70 @@ const data={
 };
 
 /* ===================== HISTORY ===================== */
-const history={};
-const HISTORY_LEN=200;
-for(const k in data) history[k]=[];
+const history = {};
+const HISTORY_LEN = 300;
+for(const k in data) history[k] = [];
 
 /* ===================== DATA UPDATE ===================== */
 function updateData(){
   for(const k in data){
-    data[k]+= (Math.random()-0.5)*0.01;
-    data[k]=Math.max(0,Math.min(1,data[k]));
+    data[k] += (Math.random()-0.5)*0.01;
+    data[k] = Math.max(0, Math.min(1, data[k]));
     history[k].push(data[k]);
     if(history[k].length>HISTORY_LEN) history[k].shift();
   }
 }
 
 /* ===================== PANEL ===================== */
-const dataDiv=document.getElementById("data");
+const dataDiv = document.getElementById("data");
 function drawPanel(){
   let out="";
   for(const k in data){
-    out+=k.padEnd(22," ")+" "+data[k].toFixed(2)+"\n";
+    out += k.padEnd(22," ") + data[k].toFixed(2) + "\n";
   }
-  dataDiv.textContent=out;
+  dataDiv.textContent = out;
 }
 
-/* ===================== GRAPH ===================== */
-function drawGraph(){
-  gCtx.clearRect(0,0,gCanvas.width,gCanvas.height);
-  const colors=[
-    "rgba(255,80,80,0.7)","rgba(80,180,255,0.7)","rgba(80,255,160,0.7)",
-    "rgba(255,180,60,0.7)","rgba(255,100,200,0.7)","rgba(100,200,255,0.7)",
-    "rgba(255,240,100,0.7)","rgba(200,120,255,0.7)","rgba(100,220,255,0.7)",
-    "rgba(255,255,255,0.7)"
-  ];
-  let i=0;
-  for(const k in history){
-    gCtx.strokeStyle=colors[i%colors.length];
-    gCtx.beginPath();
-    history[k].forEach((v,j)=>{
-      const x=j/HISTORY_LEN*gCanvas.width;
-      const y=gCanvas.height-(v*gCanvas.height);
-      if(j===0) gCtx.moveTo(x,y);
-      else gCtx.lineTo(x,y);
-    });
-    gCtx.stroke();
-    i++;
-  }
-}
-
-/* ===================== FIGURE SETTINGS ===================== */
-const figures=[
-  {param:"seismic", type:"circle", color:[255,80,80]},
-  {param:"magnetic", type:"triangle", color:[80,180,255]},
-  {param:"atmosphere_wind", type:"square", color:[80,255,160]},
-  {param:"atmosphere_pressure", type:"pentagon", color:[255,180,60]},
-  {param:"atmosphere_temp", type:"hexagon", color:[255,100,200]},
-  {param:"ocean", type:"star", color:[100,200,255]},
-  {param:"solar_radiation", type:"circle", color:[255,240,100]},
-  {param:"solar_wind", type:"triangle", color:[200,120,255]},
-  {param:"precipitation", type:"square", color:[100,220,255]},
-  {param:"chaos", type:"hexagon", color:[255,255,255]}
+/* ===================== COLORS ===================== */
+const colors = [
+  "rgba(255,80,80,0.8)",
+  "rgba(80,180,255,0.8)",
+  "rgba(80,255,160,0.8)",
+  "rgba(255,180,60,0.8)",
+  "rgba(255,100,200,0.8)",
+  "rgba(100,200,255,0.8)",
+  "rgba(255,240,100,0.8)",
+  "rgba(200,120,255,0.8)",
+  "rgba(100,220,255,0.8)",
+  "rgba(255,255,255,0.8)"
 ];
 
-/* ===================== DRAW FIGURE ===================== */
-function drawFigure(f,v,i){
-  const angle=t*0.3 + i*0.6;
-  const radius=50+v*140;
-  const sidesMap={circle:30,triangle:3,square:4,pentagon:5,hexagon:6,star:5};
-  const sides=sidesMap[f.type]||3;
+/* ===================== DRAW STREAM ===================== */
+function drawStream(){
+  ctx.fillStyle="rgba(0,0,0,0.15)";
+  ctx.fillRect(0,0,w,h);
 
-  ctx.beginPath();
-  for(let s=0;s<=sides;s++){
-    let a=(Math.PI*2/sides)*s;
-    if(f.type==="star") a*=2;
-    const r=(f.type==="circle"||f.type==="star")?radius:radius*(0.8+0.2*Math.sin(t+i));
-    const x=cx+Math.cos(a+angle)*r;
-    const y=cy+Math.sin(a+angle)*r;
-    if(s===0) ctx.moveTo(x,y);
-    else ctx.lineTo(x,y);
-  }
-  ctx.closePath();
-  ctx.strokeStyle=`rgba(${f.color[0]},${f.color[1]},${f.color[2]},${0.05+v*0.5})`;
-  ctx.lineWidth=0.8+v*2.5;
-  ctx.stroke();
-}
-
-/* ===================== ATTRACTOR ===================== */
-let ax=0,ay=0,az=0;
-function stepAttractor(){
-  const sigma=10+data.magnetic*10;
-  const rho=28+data.chaos*25;
-  const beta=2.66;
-
-  const dx=sigma*(ay-ax);
-  const dy=ax*(rho-az)-ay;
-  const dz=ax*ay-beta*az;
-
-  ax+=dx*0.003;
-  ay+=dy*0.003;
-  az+=dz*0.003;
+  const keys = Object.keys(history);
+  keys.forEach((k,i)=>{
+    const hData = history[k];
+    ctx.beginPath();
+    ctx.strokeStyle = colors[i%colors.length];
+    ctx.lineWidth = 1.5;
+    hData.forEach((v,j)=>{
+      const x = (j/HISTORY_LEN)*w;
+      const y = h*0.2 + i*(h*0.06) + (v*0.05*h); // верхня частина екрану, рух хвилеподібний
+      if(j===0) ctx.moveTo(x,y);
+      else ctx.lineTo(x,y);
+    });
+    ctx.stroke();
+  });
 }
 
 /* ===================== LOOP ===================== */
 function loop(){
   updateData();
   drawPanel();
-  drawGraph();
-
-  t+=0.015+data.atmosphere_temp*0.015;
-
-  ctx.fillStyle="rgba(0,0,0,0.15)";
-  ctx.fillRect(0,0,w,h);
-
-  /* ---- draw figures per parameter ---- */
-  figures.forEach((f,i)=>{
-    const v=data[f.param]||0.5;
-    drawFigure(f,v,i);
-  });
-
-  /* ---- attractor overlay ---- */
-  stepAttractor();
-  ctx.save();
-  ctx.translate(cx,cy);
-  ctx.beginPath();
-  ctx.strokeStyle=`rgba(255,120,200,${0.1+data.chaos*0.3})`;
-  ctx.lineWidth=1;
-  ctx.lineTo(ax*8,ay*8);
-  ctx.stroke();
-  ctx.restore();
-
+  drawStream();
   requestAnimationFrame(loop);
 }
 
